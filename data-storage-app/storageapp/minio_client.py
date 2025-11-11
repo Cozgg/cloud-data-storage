@@ -1,9 +1,16 @@
-# minio_client.py
+
 from minio import Minio
 
-minio_client = Minio(
-    "127.0.0.1:9000",  # Địa chỉ MinIO server của em
-    access_key="YOUR_ACCESS_KEY",  # Key của MinIO
-    secret_key="YOUR_SECRET_KEY", # Secret của MinIO
-    secure=False  # Đặt là True nếu em dùng HTTPS
-)
+from storageapp import app
+
+try:
+    minio_client = Minio(
+        app.config["MINIO_ENDPOINT"],
+        access_key=app.config["MINIO_ACCESS_KEY"],
+        secret_key=app.config["MINIO_SECRET_KEY"],
+        secure=False # Đặt là False nếu chạy local không có SSL
+    )
+    print("Kết nối MinIO thành công!")
+except Exception as e:
+    print(f"Lỗi khi kết nối MinIO: {e}")
+    minio_client = None
