@@ -4,7 +4,7 @@ app = Flask(__name__)
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:root@localhost/clouddb?charset=utf8mb4"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
-app.config["MINIO_ENDPOINT"] = "http://127.0.0.1:9001/"
+app.config["MINIO_ENDPOINT"] = "127.0.0.1:9000"
 app.config["MINIO_ACCESS_KEY"] = "minioadmin"
 app.config["MINIO_SECRET_KEY"] = "minioadmin"
 
