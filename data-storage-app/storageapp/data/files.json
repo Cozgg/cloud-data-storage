@@ -1,0 +1,30 @@
+[
+  {
+    "id": 101,
+    "object_name": "user/BaoCaoNhom1.pdf",
+    "size_mb": 5.2,
+    "last_modified": "2025-10-20",
+    "user_id": 1
+  },
+  {
+    "id": 102,
+    "object_name": "user/kyyeu.jpg",
+    "size_mb": 2.1,
+    "last_modified": "2025-10-19",
+    "user_id": 1
+  },
+  {
+    "id": 201,
+    "object_name": "admin/HeThongBackup.zip",
+    "size_mb": 150.7,
+    "last_modified": "2025-10-18",
+    "user_id": 2
+  },
+  {
+    "id": 202,
+    "object_name": "admin/Report_Tong.docx",
+    "size_mb": 0.8,
+    "last_modified": "2025-10-15",
+    "user_id": 2
+  }
+]

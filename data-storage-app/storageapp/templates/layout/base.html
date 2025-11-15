@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <!-- Đặt tiêu đề mặc định -->
+    <title>{% block title %}Cloud Storage{% endblock %}</title>
+    <!-- Link Bootstrap 5 (Giống haunt2204) [cite: haunt2204/saleappit2301/SaleAppIT2301-81a57e4e5e2829d3b67b781d5904d82ff1286507/saleappg1/saleapp/templates/layout/base.html] -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <!-- Link Bootstrap Icons (Cần cho giao diện Drive) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f8f9fa; }
+    </style>
+</head>
+<body>
+
+{% block header %}
+    {% include 'layout/header.html' %}
+{% endblock %}
+
+<div class="container-fluid mt-3">
+    {% block content required %}
+        {% endblock %}
+</div>
+
+</body>
+</html>

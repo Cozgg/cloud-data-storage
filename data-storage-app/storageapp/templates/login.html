@@ -1,0 +1,48 @@
+<!-- Dựa trên login của haunt2204 [cite: haunt2204/saleappit2301/SaleAppIT2301-81a57e4e5e2829d3b67b781d5904d82ff1286507/saleappg1/saleapp/templates/login.html] -->
+{% extends 'layout/base.html' %}
+{% block title %}Đăng nhập{% endblock %}
+
+{% block header %}{% endblock %} <!-- Ẩn header trên trang login -->
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-5">
+        <div class="card shadow-sm">
+            <div class="card-body p-5">
+                <h3 class="text-primary text-center mb-4">Đăng nhập Cloud Storage</h3>
+
+                <!-- Hiển thị thông báo (ví dụ: "Vui lòng đăng nhập...") -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% if messages %}
+                    {% for category, message in messages %}
+                      <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                  {% endif %}
+                {% endwith %}
+
+                <!-- Hiển thị lỗi (ví dụ: "Sai mật khẩu") -->
+                {% if err_msg %}
+                <div class="alert alert-danger">{{ err_msg }}</div>
+                {% endif %}
+
+                <form method="post">
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control" id="username" placeholder="Tài khoản" name="username">
+                        <label for="username">Tài khoản</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input type="password" class="form-control" id="password" placeholder="Mật khẩu" name="password">
+                        <label for="password">Mật khẩu</label>
+                    </div>
+                    <div class="d-grid">
+                        <button class="btn btn-primary btn-lg" type="submit">Đăng nhập</button>
+                    </div>
+                    <div class="text-center mt-3">
+                        Chưa có tài khoản? <a href="/register">Đăng ký ngay</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
