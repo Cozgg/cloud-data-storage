@@ -1,42 +1,48 @@
 {% extends 'layout/base.html' %}
 {% block title %}Đăng ký tài khoản{% endblock %}
 
-{% block header %}{% endblock %} <!-- Ẩn header -->
+{% block header %}{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center mt-5">
-    <div class="col-md-5">
-        <div class="card shadow-sm">
-            <div class="card-body p-5">
-                <h3 class="text-primary text-center mb-4">Tạo tài khoản mới</h3>
+<div class="login-container">
+    <div class="login-box">
 
-                {% if err_msg %}
-                <div class="alert alert-danger">{{ err_msg }}</div>
-                {% endif %}
+        <img src="{{ url_for('static', filename='images/icon_cloud.jpg') }}" alt="Cloud Icon" class="login-logo">
 
-                <form method="post">
-                     <div class="form-floating mb-3">
-                        <input type="text" class="form-control" id="name" placeholder="Họ và tên" name="name">
-                        <label for="name">Họ và tên</label>
-                    </div>
-                    <div class="form-floating mb-3">
-                        <input type="text" class="form-control" id="username" placeholder="Tài khoản" name="username">
-                        <label for="username">Tài khoản</label>
-                    </div>
-                    <div class="form-floating mb-3">
-                        <input type="password" class="form-control" id="password" placeholder="Mật khẩu" name="password">
-                        <label for="password">Mật khẩu</label>
-                    </div>
-                    <!-- (Thêm logic xác nhận mật khẩu nếu cần) -->
-                    <div class="d-grid">
-                        <button class="btn btn-primary btn-lg" type="submit">Đăng ký</button>
-                    </div>
-                    <div class="text-center mt-3">
-                        Đã có tài khoản? <a href="/login">Đăng nhập</a>
-                    </div>
-                </form>
+        <h3>Tạo tài khoản mới</h3>
+
+        {% if err_msg %}
+        <div class="alert alert-danger">{{ err_msg }}</div>
+        {% endif %}
+
+        <form method="post" action="{{ url_for('user_register') }}">
+             <div class="form-floating mb-3">
+                <input type="text" class="form-control" id="name" placeholder="Họ và tên" name="name" required>
+                <label for="name">Họ và tên</label>
             </div>
-        </div>
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control" id="username" placeholder="Tài khoản" name="username" required>
+                <label for="username">Tài khoản</label>
+            </div>
+            <div class="form-floating mb-3">
+                <input type="password" class="form-control" id="password" placeholder="Mật khẩu" name="password" required>
+                <label for="password">Mật khẩu</label>
+            </div>
+            <div class="form-floating mb-4">
+                <input type="password" class="form-control" id="confirm_password" placeholder="Xác nhận mật khẩu" name="confirm_password" required>
+                <label for="confirm_password">Xác nhận mật khẩu</label>
+            </div>
+
+            <div class="d-grid">
+                <button class="btn btn-primary btn-lg" type="submit">
+                    Đăng ký
+                </button>
+            </div>
+            <div class="text-center mt-3">
+                Đã có tài khoản? <a href="{{ url_for('user_login') }}">Đăng nhập ngay</a>
+            </div>
+        </form>
     </div>
 </div>
+
 {% endblock %}

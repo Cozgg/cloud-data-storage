@@ -25,7 +25,7 @@ class MockUser:
 
 # --- Đường dẫn đến file JSON ---
 base_dir = os.path.abspath(os.path.dirname(__file__))
-users_path = os.path.join(base_dir, 'data', 'users.json')
+users_path = os.path.join(base_dir, 'data', 'user.json')
 files_path = os.path.join(base_dir, 'data', 'files.json')
 
 

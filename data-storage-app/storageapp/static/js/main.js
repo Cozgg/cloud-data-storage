@@ -1,0 +1,1 @@
+console.log("main.js đã được tải.");

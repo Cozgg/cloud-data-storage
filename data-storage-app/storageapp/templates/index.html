@@ -1,95 +1,95 @@
-<!-- Giao diện Dashboard (Giống Google Drive) -->
 {% extends 'layout/base.html' %}
 {% block title %}Drive của tôi{% endblock %}
 
+{% block header %}{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
+
+
 {% block content %}
-<div class="row">
+<div class="drive-container">
 
-    <!-- 1. Sidebar (Menu trái) -->
-    <div class="col-md-2">
-        <!-- Nút "+ Mới" (Giống ảnh) -->
-        <button type="button" class="btn btn-primary btn-lg shadow-sm mb-3 w-100" data-bs-toggle="modal" data-bs-target="#uploadModal">
-            <i class="bi bi-plus-lg"></i> Mới
-        </button>
+    <div class="drive-header">
+        <img src="{{ url_for('static', filename='images/icon_cloud.jpg') }}" alt="Logo" class="drive-logo">
+        <span class="fs-4 me-4">Drive</span>
 
-        <div class="nav flex-column nav-pills" role="tablist" aria-orientation="vertical">
-            <a class="nav-link active" href="/">
-                <i class="bi bi-house-door-fill"></i> Tệp của tôi
-            </a>
-            <a class="nav-link" href="/billing">
-                <i class="bi bi-credit-card"></i> Thanh toán
-            </a>
-        </div>
-    </div>
+        <form class="drive-search position-relative" method="get" action="{{ url_for('dashboard.user_dashboard') }}">
+            <i class="bi bi-search drive-search-icon"></i>
+            <input class="form-control" type="text" placeholder="Tìm trong Drive..." name="q" value="{{ request.args.get('q', '') }}">
+        </form>
 
-    <!-- 2. Main Content (Danh sách file) -->
-    <div class="col-md-10">
-        <h4 class="mb-3">Tệp của tôi</h4>
+        <div class="drive-actions">
+            <button class="btn-icon"><i class="bi bi-gear fs-4"></i></button>
 
-        <table class="table table-hover align-middle bg-white rounded shadow-sm">
-            <thead class="table-light">
-                <tr>
-                    <th scope="col">Tên</th>
-                    <th scope="col">Ngày sửa đổi</th>
-                    <th scope="col">Kích thước</th>
-                    <th scope="col">Hành động</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Dùng Mock Data từ DAO -->
-                {% if files %}
-                    {% for file in files %}
-                    <tr>
-                        <td>
-                            <i class="bi bi-file-earmark-text me-2"></i>
-                            {{ file.object_name }}
-                        </td>
-                        <td>{{ file.last_modified }}</td>
-                        <td>{{ "%.1f"|format(file.size_mb) }} MB</td>
-                        <td>
-                            <!-- Nút Xem (View) - Tạm thời trỏ link download -->
-                            <a href="/download-url/{{ file.object_name }}" class="btn btn-light btn-sm" title="Xem/Tải về" target="_blank">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                            <!-- Nút Xóa (TODO: Cần route /delete) -->
-                            <button class="btn btn-outline-danger btn-sm" title="Xóa">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                {% else %}
-                    <tr>
-                        <td colspan="4" class="text-center text-muted p-4">
-                            Khu vực này trống. Hãy bấm "Mới" để tải tệp lên!
-                        </td>
-                    </tr>
-                {% endif %}
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<!-- 3. Upload Modal (Cửa sổ bật lên) -->
-<div class="modal fade" id="uploadModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Tải tệp lên</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="dropdown ms-2">
+                <button class="btn-icon" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-person-circle fs-4"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
+                    <li><h6 class="dropdown-header">Chào, {{ current_user.name }}!</h6></li>
+                    <li><a class="dropdown-item" href="{{ url_for('dashboard.billing') }}">Quản lý thanh toán</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item text-danger" href="{{ url_for('main.user_logout') }}">
+                            <i class="bi bi-box-arrow-right me-2"></i>Đăng xuất
+                        </a>
+                    </li>
+                </ul>
             </div>
-            <!-- Form Upload trỏ đến API (như cũ) -->
-            <form action="/upload" method="post" enctype="multipart/form-data">
-                <div class="modal-body">
-                    <p>Chọn tệp từ máy tính của bạn:</p>
-                    <input type="file" class="form-control" name="file" id="fileUpload" required>
+
+        </div>
+    </div>
+
+    <div class="drive-body">
+
+        <div class="drive-sidebar">
+            <button type="button" class="btn btn-light btn-lg shadow-sm mb-3 w-100 btn-new" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                <i class="bi bi-plus-lg"></i> Mới
+            </button>
+
+            <div class="nav flex-column nav-pills" role="tablist">
+                <a class="nav-link active" href="{{ url_for('dashboard.user_dashboard') }}">
+                    <i class="bi bi-house-door-fill"></i> Tệp của tôi
+                </a>
+                <a class="nav-link" href="{{ url_for('dashboard.billing') }}">
+                    <i class="bi bi-credit-card"></i> Thanh toán
+                </a>
+            </div>
+
+            <div class="quota-bar">
+                <p>Đã dùng: 10.39 GB / 15 GB</p>
+                <div class="progress">
+                    <div class="progress-bar" role="progressbar" style="width: 69%;"></div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-primary">Tải lên</button>
-                </div>
-            </form>
+                <a href="{{ url_for('dashboard.billing') }}" class="btn btn-outline-primary btn-sm mt-2" style="border-radius: 16px;">
+                    Mua thêm bộ nhớ
+                </a>
+            </div>
+        </div>
+
+        <div class="drive-content">
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                  </div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+
+            <h4 class="mb-3">Tệp của tôi</h4>
+
+            <table class="table table-hover align-middle bg-white">
+                </table>
         </div>
     </div>
 </div>
+
+{% include 'includes/upload_modal.html' %}
 {% endblock %}

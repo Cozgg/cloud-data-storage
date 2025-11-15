@@ -1,95 +1,55 @@
-<!-- Trang Admin (MỚI - Thay thế Flask-Admin) -->
 {% extends 'layout/base.html' %}
 {% block title %}Trang Quản Trị{% endblock %}
 
-{% block content %}
-<h2 class="mb-4"><i class="bi bi-shield-lock"></i> Trang Quản Trị</h2>
+{% block header %}{% endblock %}
+{% block footer %}{% endblock %}
 
-<!-- 1. Thống kê (Theo yêu cầu) -->
-<h4><i class="bi bi-bar-chart-line"></i> Thống kê hệ thống</h4>
-<div class="row my-3">
-    <div class="col-md-4">
-        <div class="card text-white bg-primary mb-3 shadow">
-            <div class="card-body">
-                <h5 class="card-title"><i class="bi bi-people-fill"></i> Tổng người dùng</h5>
-                <p class="card-text fs-2">{{ all_users|length }}</p>
-            </div>
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
+
+
+{% block content %}
+<div class="drive-container">
+
+    <div class="drive-header">
+        <img src="{{ url_for('static', filename='images/icon_cloud.jpg') }}" alt="Logo" class="drive-logo">
+        <span class="fs-4 me-4 text-danger">Admin Panel</span>
+
+        <form class="drive-search position-relative" method="get" action="{{ url_for('admin.admin_dashboard') }}">
+            <i class="bi bi-search drive-search-icon"></i>
+            <input class="form-control" type="text" placeholder="Tìm User, tìm File..." name="q" value="{{ request.args.get('q', '') }}">
+        </form>
+
+        <div class="drive-actions">
+            <span class="fs-5 me-3">Chào, {{ current_user.name }}!</span>
+            <a href="{{ url_for('main.user_logout') }}" class="btn-icon"><i class="bi bi-box-arrow-right fs-4"></i></a>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card text-white bg-success mb-3 shadow">
-            <div class="card-body">
-                <h5 class="card-title"><i class="bi bi-file-earmark-zip-fill"></i> Tổng số file</h5>
-                <p class="card-text fs-2">{{ all_files|length }}</p>
-            </div>
+
+    <div class="drive-body">
+
+        <div class="drive-sidebar">
+            <button type="button" class="btn btn-danger btn-lg shadow-sm mb-3 w-100 btn-new">
+                <i class="bi bi-plus-lg"></i> Tạo Gói Mới
+            </button>
+
+            <div class="nav flex-column nav-pills" role="tablist">
+                <a class="nav-link active" href="{{ url_for('admin.admin_dashboard') }}">
+                    <i class="bi bi-bar-chart-fill"></i> Thống kê
+                </a>
+                <a class="nav-link" href="#">
+                    <i class="bi bi-people-fill"></i> Quản lý User
+                </a>
+                </div>
         </div>
+
+        <div class="drive-content">
+            <h4 class="mb-3">
+                <i class="bi bi-bar-chart-fill"></i> Thống kê hệ thống
+            </h4>
+
+            </div>
     </div>
 </div>
-
-<hr>
-
-<!-- 2. Quản lý Người dùng (Theo yêu cầu) -->
-<h4><i class="bi bi-person-lines-fill"></i> Quản lý người dùng</h4>
-<table class="table table-striped table-hover bg-white shadow-sm">
-    <thead class="table-light">
-        <tr>
-            <th>ID</th>
-            <th>Tên</th>
-            <th>Tài khoản (username)</th>
-            <th>Vai trò (role)</th>
-            <th>Hành động</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for u in all_users %}
-        <tr>
-            <td>{{ u.id }}</td>
-            <td>{{ u.name }}</td>
-            <td>{{ u.username }}</td>
-            <td>
-                {% if u.role == 'ADMIN' %}
-                <span class="badge bg-danger">{{ u.role }}</span>
-                {% else %}
-                <span class="badge bg-secondary">{{ u.role }}</span>
-                {% endif %}
-            </td>
-            <td>
-                <button class="btn btn-warning btn-sm">
-                    <i class="bi bi-lock-fill"></i> Khóa
-                </button>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-
-<hr>
-
-<!-- 3. Quản lý Gói cước (Theo yêu cầu - Tạm mock) -->
-<h4><i class="bi bi-credit-card-2-front-fill"></i> Quản lý gói cước</h4>
-<table class="table table-hover bg-white shadow-sm">
-     <thead class="table-light">
-        <tr>
-            <th>Gói</th>
-            <th>Giá</th>
-            <th>Dung lượng</th>
-            <th>Hành động</th>
-        </tr>
-    </thead>
-     <tbody>
-        <tr>
-            <td>Miễn phí</td>
-            <td>0đ</td>
-            <td>15 GB</td>
-            <td><button class="btn btn-secondary btn-sm" disabled>Sửa</button></td>
-        </tr>
-         <tr>
-            <td>Pro</td>
-            <td>50.000đ</td>
-            <td>100 GB</td>
-            <td><button class="btn btn-info btn-sm">Sửa</g></button>
-        </tr>
-    </tbody>
-</table>
-
 {% endblock %}

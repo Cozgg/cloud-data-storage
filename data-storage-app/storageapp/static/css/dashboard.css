@@ -1,0 +1,115 @@
+/* Ghi đè CSS của base.html để có nền trắng */
+body {
+    background-color: #fff !important;
+    color: #3c4043; /* Màu chữ chuẩn của Google */
+}
+
+/* Container chính, bỏ margin-top vì đã ẩn header */
+.drive-container {
+    margin-top: 0 !important;
+}
+
+/* Thanh header mới (Search bar) y hệt hình */
+.drive-header {
+    padding: 8px 20px;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    align-items: center;
+    height: 65px; /* Chiều cao cố định */
+}
+.drive-logo {
+    width: 40px;
+    height: 40px;
+    margin-right: 10px;
+}
+.drive-search {
+    flex-grow: 1;
+    max-width: 720px;
+}
+.drive-search .form-control {
+    background-color: #f1f3f4; /* Màu nền search bar của Google */
+    border: none;
+    height: 48px;
+    border-radius: 24px; /* Bo tròn */
+    padding-left: 50px; /* Thêm space cho icon */
+}
+.drive-search-icon {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #5f6368;
+    font-size: 1.2rem;
+}
+.drive-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+}
+.drive-actions .btn-icon {
+    color: #5f6368;
+    background: none;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+}
+.drive-actions .btn-icon:hover {
+    background-color: #f1f3f4;
+}
+
+/* Bố cục Sidebar + Content */
+.drive-body {
+    display: flex;
+    height: calc(100vh - 65px); /* 100% chiều cao trừ header */
+}
+
+/* Sidebar mới (giống hình) */
+.drive-sidebar {
+    padding: 10px;
+    width: 250px; /* Cố định chiều rộng */
+    border-right: 1px solid #dee2e6;
+    flex-shrink: 0;
+}
+.drive-sidebar .btn-new {
+    border-radius: 24px;
+    padding: 12px 24px;
+    font-weight: 500;
+    box-shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15);
+}
+.drive-sidebar .nav-link {
+    color: #3c4043;
+    font-weight: 500;
+    border-radius: 50px; /* Bo tròn */
+    padding: 8px 16px;
+}
+.drive-sidebar .nav-link.active {
+    background-color: #e6f0ff; /* Màu xanh lơ khi active */
+    color: #0d6efd;
+}
+.drive-sidebar .nav-link i {
+    font-size: 1.2rem;
+    margin-right: 16px;
+}
+
+/* Thanh Quota (Giống hình) */
+.quota-bar {
+    margin-top: 20px;
+    padding: 10px 16px;
+}
+.quota-bar .progress {
+    height: 10px;
+    border-radius: 5px;
+}
+.quota-bar p {
+    font-size: 0.9rem;
+    color: #5f6368;
+    margin-bottom: 5px;
+}
+
+/* Content chính */
+.drive-content {
+    padding: 20px;
+    flex-grow: 1; /* Chiếm hết phần còn lại */
+    overflow-y: auto; /* Scroll chỉ ở đây */
+}

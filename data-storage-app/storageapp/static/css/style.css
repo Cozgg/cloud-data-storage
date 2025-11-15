@@ -1,0 +1,136 @@
+/* --- 1. GLOBAL STYLES (Chủ đề Đen & Trắng, Nhấn Xanh) --- */
+body {
+    background-color: #ffffff; /* Nền trắng */
+    /* SỬA: Đổi chữ thành màu đen/xám đậm (màu chuẩn của Bootstrap) */
+    color: #212529;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* --- Các nút và link vẫn giữ màu xanh (màu tương tác) --- */
+.btn-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: #ffffff;
+}
+.btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+    color: #ffffff;
+}
+.btn-outline-primary {
+    color: #0d6efd;
+    border-color: #0d6efd;
+}
+.btn-outline-primary:hover {
+    background-color: #0d6efd;
+    color: #ffffff;
+}
+
+/* --- 2. HOMEPAGE STYLES (Kiểu iCloud) --- */
+.homepage-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 80vh;
+    text-align: center;
+    padding: 2rem;
+}
+
+.hero-logo {
+    width: 120px;
+    height: 120px;
+    margin-bottom: 1.5rem;
+}
+
+.homepage-container h1 {
+    font-size: 3.5rem;
+    font-weight: 600;
+    /* SỬA: Đổi H1 sang màu đen */
+    color: #212529;
+    margin-bottom: 1rem;
+}
+
+.homepage-container .tagline {
+    font-size: 1.5rem;
+    /* SỬA: Đổi tagline sang màu xám (nhạt hơn H1) */
+    color: #495057;
+    margin-bottom: 2rem;
+    max-width: 500px;
+}
+
+.homepage-container .btn-lg {
+    padding: 0.75rem 1.5rem;
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+/* --- 3. FEATURE SECTION (SỬA: "Tạo khối") --- */
+.features-section {
+    padding: 4rem 0;
+    /* SỬA: Đổi nền sang xám nhạt (thay vì xanh nhạt) */
+    background-color: #f8f9fa;
+}
+
+/* MỚI: CSS cho "khối" (feature-card) chuyên nghiệp */
+.feature-card {
+    background: #ffffff; /* Nền trắng (nổi bật trên nền xám) */
+    border: 1px solid #dee2e6; /* Viền xám nhạt */
+    border-radius: 8px; /* Bo góc */
+    padding: 2.5rem 2rem;
+    text-align: center;
+    height: 100%; /* Giúp các khối cao bằng nhau */
+    box-shadow: 0 10px 12px rgba(0, 0, 0, 0.05); /* Đổ bóng nhẹ */
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px); /* Hiệu ứng nổi lên khi hover */
+    box-shadow: 0 20px 20px rgba(0, 0, 0, 0.08);
+}
+
+.feature-card i {
+    font-size: 3rem;
+    color: #0d6efd; /* Giữ icon màu xanh làm điểm nhấn */
+    margin-bottom: 1rem;
+}
+
+.feature-card h4 {
+    /* SỬA: Đổi tiêu đề khối sang đen */
+    color: #212529;
+    font-weight: 600;
+}
+
+/* --- 4. LOGIN PAGE STYLES --- */
+.login-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background-color: #f8f9fa;
+}
+
+/* SỬA: Thay thế đoạn mã này */
+.login-box {
+    width: 100%;
+    max-width: 500px; /* Tăng từ 380px lên 400px */
+    padding: 2.5rem;
+    background: #ffffff;
+    border-radius: 12px;
+    /* Cập nhật bóng đổ theo yêu cầu của bạn */
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.login-logo {
+    width: 100px;
+    height: 100px;
+    margin-bottom: 1.5rem;
+}
+
+.login-box h3 {
+    font-weight: 600;
+    /* SỬA: Đổi H3 sang đen */
+    color: #212529;
+    margin-bottom: 1.5rem;
+}

@@ -1,0 +1,63 @@
+{% extends 'layout/base.html' %}
+{% block title %}Cloud Storage - Lưu trữ an toàn{% endblock %}
+
+{% block header %}{% endblock %}
+
+{% block content %}
+
+<div class="homepage-container">
+
+    <img src="{{ url_for('static', filename='images/icon_cloud.jpg') }}" alt="Cloud Storage Logo" class="hero-logo">
+
+    <h1>Cloud Storage</h1>
+
+    <p class="tagline">
+        Nơi tốt nhất cho mọi tệp tin, tài liệu và ảnh của bạn.
+        An toàn, bảo mật và truy cập mọi lúc, mọi nơi.
+    </p>
+
+    <a href="{{ url_for('user_login') }}" class="btn btn-primary btn-lg shadow-sm">
+         Đăng nhập
+    </a>
+</div>
+
+<div class="features-section">
+    <div class="container">
+
+        <div class="row mb-5 text-center">
+            <div class="col-lg-8 mx-auto">
+                <h2 class="fw-bold">Một Bảng điều khiển cho Tất cả</h2>
+                <p class="text-muted">Quản lý mọi thứ tập trung tại một nơi, từ tệp tin cá nhân đến thanh toán.</p>
+            </div>
+        </div>
+
+        <div class="row g-4">
+
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <i class="bi bi-layout-wtf"></i>
+                    <h4>Quản lý Trực quan</h4>
+                    <p>Giao diện dashboard cho phép bạn xem, tìm kiếm và sắp xếp tệp tin một cách dễ dàng.</p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <i class="bi bi-cloud-upload"></i>
+                    <h4>Tải lên Nhanh chóng</h4>
+                    <p>Upload và chia sẻ file an toàn, được sao lưu trên hệ thống MinIO mạnh mẽ, đảm bảo tính toàn vẹn dữ liệu.</p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <i class="bi bi-pie-chart-fill"></i>
+                    <h4>Theo dõi Dung lượng</h4>
+                    <p>Dashboard hiển thị rõ ràng quota (dung lượng) đã sử dụng, giúp bạn kiểm soát và nâng cấp gói cước khi cần.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
