@@ -165,7 +165,6 @@ def admin_users():
 
     return render_template("admin/all_users.html", users=users)
 
-# --- 5. FILE API ROUTES (MinIO) ---
 
 @app.route('/upload', methods=['POST'])
 @login_required
@@ -194,11 +193,11 @@ def api_upload_file():
     object_name = f"user_{current_user.id}/{file.filename}"
 
     try:
-        # SỬA LẠI: file.stream giờ là file
+
         success, _ = controllers.upload_file_to_minio(object_name, file.stream, file_size_bytes)
 
         if success:
-            # MỚI: Thêm vào mock data
+
             dao.add_file_record(current_user.id, object_name, file_size_mb)
             flash('Tải tệp lên thành công!', 'success')
         else:
@@ -219,79 +218,76 @@ def api_get_download_url(object_name):
     return "Không tìm thấy file hoặc có lỗi", 404
 
 
-# # --- 6. TÍCH HỢP THANH TOÁN MOMO ---
-#
-# @app.route('/billing/create_payment')
-# @login_required
-# def create_payment():
-#     # (Đây là code placeholder - bạn PHẢI thay key thật)
-#     partner_code = "YOUR_PARTNER_CODE"
-#     access_key = "YOUR_ACCESS_KEY"
-#     secret_key = "YOUR_SECRET_KEY"
-#     order_id = str(uuid.uuid4())
-#     order_info = "Nâng cấp gói Pro 100GB"
-#     amount = "50000"
-#     base_url = "http://127.0.0.1:5000"  # (Khi test local. Dùng NGROK nếu public)
-#     redirect_url = f"{base_url}{url_for('payment_return')}"
-#     notify_url = f"{base_url}{url_for('momo_ipn')}"
-#     request_type = "captureWallet"
-#     request_id = str(uuid.uuid4())
-#     extra_data = ""
-#
-#     raw_signature = (
-#         f"partnerCode={partner_code}"
-#         f"&accessKey={access_key}"
-#         f"&requestId={request_id}"
-#         f"&amount={amount}"
-#         f"&orderId={order_id}"
-#         f"&orderInfo={order_info}"
-#         f"&returnUrl={redirect_url}"
-#         f"&notifyUrl={notify_url}"
-#         f"&extraData={extra_data}"
-#     )
-#
-#     signature = hmac.new(secret_key.encode('utf-8'), raw_signature.encode('utf-8'), hashlib.sha256).hexdigest()
-#
-#     url = "https://test-payment.momo.vn/v2/gateway/api/create"
-#     payload = {
-#         'partnerCode': partner_code, 'accessKey': access_key, 'requestId': request_id,
-#         'amount': amount, 'orderId': order_id, 'orderInfo': order_info,
-#         'returnUrl': redirect_url, 'notifyUrl': notify_url, 'extraData': extra_data,
-#         'requestType': request_type, 'signature': signature, 'lang': 'vi'
-#     }
-#
-#     try:
-#         response = requests.post(url, data=json.dumps(payload), headers={'Content-Type': 'application/json'})
-#         response_data = response.json()
-#
-#         if response_data.get('resultCode') == 0:
-#             return redirect(response_data.get('payUrl'))
-#         else:
-#             flash(f"Lỗi MoMo: {response_data.get('message')}", 'danger')
-#             return redirect(url_for('billing'))
-#     except Exception as e:
-#         flash(f"Lỗi kết nối: {e}", 'danger')
-#         return redirect(url_for('billing'))
-#
-#
-# @app.route('/billing/return')
-# @login_required
-# def payment_return():
-#     result_code = request.args.get('resultCode')
-#     if result_code == '0':
-#         # (Nên kiểm tra lại signature)
-#         # (Cập nhật DB: dao.upgrade_user_package(current_user.id, "PRO"))
-#         flash('Thanh toán thành công! Gói của bạn đã được nâng cấp.', 'success')
-#     else:
-#         flash('Thanh toán thất bại hoặc bị hủy.', 'danger')
-#     return redirect(url_for('user_dashboard'))
-#
-#
-# @app.route('/momo_ipn', methods=['POST'])
-# def momo_ipn():
-#     # (Nơi MoMo Server gọi để xác nhận)
-#     # (Cần kiểm tra signature và cập nhật DB ở đây)
-#     return '', 204
+# --- 6. TÍCH HỢP THANH TOÁN MOMO ---
+
+@app.route('/billing/create_payment')
+@login_required
+def create_payment():
+    # (Đây là code placeholder - bạn PHẢI thay key thật)
+    partner_code = "YOUR_PARTNER_CODE"
+    access_key = "YOUR_ACCESS_KEY"
+    secret_key = "YOUR_SECRET_KEY"
+    order_id = str(uuid.uuid4())
+    order_info = "Nâng cấp gói Pro 100GB"
+    amount = "50000"
+    base_url = "http://127.0.0.1:5000"  # (Khi test local. Dùng NGROK nếu public)
+    redirect_url = f"{base_url}{url_for('payment_return')}"
+    notify_url = f"{base_url}{url_for('momo_ipn')}"
+    request_type = "captureWallet"
+    request_id = str(uuid.uuid4())
+    extra_data = ""
+
+    raw_signature = (
+        f"partnerCode={partner_code}"
+        f"&accessKey={access_key}"
+        f"&requestId={request_id}"
+        f"&amount={amount}"
+        f"&orderId={order_id}"
+        f"&orderInfo={order_info}"
+        f"&returnUrl={redirect_url}"
+        f"&notifyUrl={notify_url}"
+        f"&extraData={extra_data}"
+    )
+
+    signature = hmac.new(secret_key.encode('utf-8'), raw_signature.encode('utf-8'), hashlib.sha256).hexdigest()
+
+    url = "https://test-payment.momo.vn/v2/gateway/api/create"
+    payload = {
+        'partnerCode': partner_code, 'accessKey': access_key, 'requestId': request_id,
+        'amount': amount, 'orderId': order_id, 'orderInfo': order_info,
+        'returnUrl': redirect_url, 'notifyUrl': notify_url, 'extraData': extra_data,
+        'requestType': request_type, 'signature': signature, 'lang': 'vi'
+    }
+
+    try:
+        response = requests.post(url, data=json.dumps(payload), headers={'Content-Type': 'application/json'})
+        response_data = response.json()
+
+        if response_data.get('resultCode') == 0:
+            return redirect(response_data.get('payUrl'))
+        else:
+            flash(f"Lỗi MoMo: {response_data.get('message')}", 'danger')
+            return redirect(url_for('billing'))
+    except Exception as e:
+        flash(f"Lỗi kết nối: {e}", 'danger')
+        return redirect(url_for('billing'))
+
+
+@app.route('/billing/return')
+@login_required
+def payment_return():
+    result_code = request.args.get('resultCode')
+    if result_code == '0':
+        flash('Thanh toán thành công! Gói của bạn đã được nâng cấp.', 'success')
+    else:
+        flash('Thanh toán thất bại hoặc bị hủy.', 'danger')
+    return redirect(url_for('user_dashboard'))
+
+
+@app.route('/momo_ipn', methods=['POST'])
+def momo_ipn():
+
+    return '', 204
 
 
 if __name__ == "__main__":

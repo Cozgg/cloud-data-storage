@@ -27,13 +27,11 @@ class BillingView(AuthenticatedModelView):
 
 
 class MyAdminIndexView(AdminIndexView):
+    def is_accessible(self) -> bool:
+        # Trả về True chỉ khi người dùng đã đăng nhập VÀ có role là ADMIN
+        return current_user.is_authenticated and current_user.role == UserRole.ADMIN
     @expose('/')
     def index(self):
-        if not (current_user.is_authenticated and current_user.role == UserRole.ADMIN):
-            # Nếu chưa đăng nhập Admin, hiển thị form login
-            return render_template('admin/login_admin.html')
-
-        # Nếu đã đăng nhập, hiển thị thống kê
         user_count = dao.get_user_count()
         total_storage = dao.get_total_storage_used()
         return self.render('admin/index.html',
