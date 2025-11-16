@@ -36,6 +36,6 @@ class File(Base):
 
 
 class BillingPackage(Base):
-    name = Column(String(150), unique=True)  # Ghi đè name để nó unique
+    name = Column(String(150), unique=True)
     price = Column(Float, default=0.0)
     storage_limit_gb = Column(Integer, default=15)

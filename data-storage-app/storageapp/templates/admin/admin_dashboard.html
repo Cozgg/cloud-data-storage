@@ -27,14 +27,14 @@
     </div>
     <div class="drive-body">
         <div class="drive-sidebar">
-            <button type="button" class="btn btn-danger btn-lg shadow-sm mb-3 w-100 btn-new">
-                <i class="bi bi-plus-lg"></i> Tạo Gói Mới
-            </button>
+            <a href="#" class="btn btn-danger btn-lg shadow-sm mb-3 w-100 btn-new disabled" onclick="return false;">
+                <i class="bi bi-plus-lg"></i> Tạo Gói Mới (Đang phát triển)
+            </a>
             <div class="nav flex-column nav-pills" role="tablist">
                 <a class="nav-link active" href="{{ url_for('admin_dashboard') }}">
                     <i class="bi bi-bar-chart-fill"></i> Thống kê
                 </a>
-                <a class="nav-link" href="#">
+                <a class="nav-link" href="{{ url_for('admin_users') }}">
                     <i class="bi bi-people-fill"></i> Quản lý User
                 </a>
             </div>
@@ -43,7 +43,33 @@
             <h4 class="mb-3">
                 <i class="bi bi-bar-chart-fill"></i> Thống kê hệ thống
             </h4>
+
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <div class="card shadow-sm">
+                        <div class="card-body text-center">
+                            <h5 class="card-title"><i class="bi bi-people-fill text-primary"></i> Tổng Người Dùng</h5>
+                            <p class="card-text fs-2 fw-bold">{{ total_users }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card shadow-sm">
+                        <div class="card-body text-center">
+                            <h5 class="card-title"><i class="bi bi-file-earmark-fill text-success"></i> Tổng Số Tệp</h5>
+                            <p class="card-text fs-2 fw-bold">{{ total_files_count }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card shadow-sm">
+                        <div class="card-body text-center">
+                            <h5 class="card-title"><i class="bi bi-database-fill text-info"></i> Tổng Dung Lượng</h5>
+                            <p class="card-text fs-2 fw-bold">{{ "%.2f"|format(total_storage_gb) }} GB</p>
+                        </div>
+                    </div>
+                </div>
             </div>
-    </div>
+            </div> </div>
 </div>
 {% endblock %}

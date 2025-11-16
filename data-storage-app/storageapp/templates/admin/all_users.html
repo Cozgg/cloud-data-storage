@@ -1,0 +1,90 @@
+{% extends 'layout/base.html' %}
+{% block title %}Quản lý Người dùng{% endblock %}
+
+{% block header %}{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="drive-container">
+    <div class="drive-header">
+        <img src="{{ url_for('static', filename='images/icon_cloud.jpg') }}" alt="Logo" class="drive-logo">
+        <span class="fs-4 me-4">Storage Cloud</span>
+        <span class="fs-5 text-danger">(Admin)</span>
+
+        <form class="drive-search position-relative" method="get" action="{{ url_for('admin_users') }}">
+            <i class="bi bi-search drive-search-icon"></i>
+            <input class="form-control" type="text" placeholder="Tìm User..." name="q" value="{{ request.args.get('q', '') }}">
+        </form>
+
+        <div class="drive-actions">
+            <span class="fs-5 me-3">Chào, {{ current_user.name }}!</span>
+            <a href="{{ url_for('user_logout') }}" class="btn-icon"><i class="bi bi-box-arrow-right fs-4"></i></a>
+        </div>
+    </div>
+    <div class="drive-body">
+        <div class="drive-sidebar">
+            <a href="#" class="btn btn-danger btn-lg shadow-sm mb-3 w-100 btn-new disabled" onclick="return false;">
+                <i class="bi bi-plus-lg"></i> Tạo Gói Mới (Đang phát triển)
+            </a>
+            <div class="nav flex-column nav-pills" role="tablist">
+                <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                    <i class="bi bi-bar-chart-fill"></i> Thống kê
+                </a>
+                <a class="nav-link active" href="{{ url_for('admin_users') }}">
+                    <i class="bi bi-people-fill"></i> Quản lý User
+                </a>
+            </div>
+        </div>
+        <div class="drive-content">
+            <h4 class="mb-3">
+                <i class="bi bi-people-fill"></i> Quản lý Người dùng
+            </h4>
+
+            <table class="table table-hover align-middle bg-white shadow-sm">
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col">ID</th>
+                        <th scope="col">Họ tên</th>
+                        <th scope="col">Tài khoản (Username)</th>
+                        <th scope="col">Vai trò</th>
+                        <th scope="col">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if users %}
+                        {% for u in users %}
+                        <tr>
+                            <td><strong>{{ u.id }}</strong></td>
+                            <td>{{ u.name }}</td>
+                            <td>{{ u.username }}</td>
+                            <td>
+                                {% if u.role == 'ADMIN' %}
+                                <span class="badge bg-danger">Quản trị viên</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Người dùng</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-light btn-sm" title="Khóa/Mở (Chưa có)">
+                                    <i class="bi bi-lock"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted p-4">
+                                Không tìm thấy người dùng nào.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
