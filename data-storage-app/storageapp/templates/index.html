@@ -1,5 +1,5 @@
 {% extends 'layout/base.html' %}
-{% block title %}Drive của tôi{% endblock %}
+{% block title %}Cloud của tôi{% endblock %}
 
 {% block header %}{% endblock %}
 {% block footer %}{% endblock %}
@@ -14,11 +14,11 @@
 
     <div class="drive-header">
         <img src="{{ url_for('static', filename='images/icon_cloud.jpg') }}" alt="Logo" class="drive-logo">
-        <span class="fs-4 me-4">Drive</span>
+        <span class="fs-4 me-4">Storage Cloud</span>
 
-        <form class="drive-search position-relative" method="get" action="{{ url_for('dashboard.user_dashboard') }}">
+        <form class="drive-search position-relative" method="get" action="{{ url_for('user_dashboard') }}">
             <i class="bi bi-search drive-search-icon"></i>
-            <input class="form-control" type="text" placeholder="Tìm trong Drive..." name="q" value="{{ request.args.get('q', '') }}">
+            <input class="form-control" type="text" placeholder="Tìm trong Storage Cloud..." name="q" value="{{ request.args.get('q', '') }}">
         </form>
 
         <div class="drive-actions">
@@ -30,10 +30,10 @@
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
                     <li><h6 class="dropdown-header">Chào, {{ current_user.name }}!</h6></li>
-                    <li><a class="dropdown-item" href="{{ url_for('dashboard.billing') }}">Quản lý thanh toán</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('billing') }}">Quản lý thanh toán</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li>
-                        <a class="dropdown-item text-danger" href="{{ url_for('main.user_logout') }}">
+                        <a class="dropdown-item text-danger" href="{{ url_for('user_logout') }}">
                             <i class="bi bi-box-arrow-right me-2"></i>Đăng xuất
                         </a>
                     </li>
@@ -51,20 +51,20 @@
             </button>
 
             <div class="nav flex-column nav-pills" role="tablist">
-                <a class="nav-link active" href="{{ url_for('dashboard.user_dashboard') }}">
+                <a class="nav-link active" href="{{ url_for('user_dashboard') }}">
                     <i class="bi bi-house-door-fill"></i> Tệp của tôi
                 </a>
-                <a class="nav-link" href="{{ url_for('dashboard.billing') }}">
+                <a class="nav-link" href="{{ url_for('billing') }}">
                     <i class="bi bi-credit-card"></i> Thanh toán
                 </a>
             </div>
 
             <div class="quota-bar">
-                <p>Đã dùng: 10.39 GB / 15 GB</p>
+                <p>Đã dùng: {{ "%.2f"|format(usage_gb) }} GB / {{ "%.0f"|format(limit_gb) }} GB</p>
                 <div class="progress">
-                    <div class="progress-bar" role="progressbar" style="width: 69%;"></div>
+                    <div class="progress-bar" role="progressbar" style="width: {{ quota_percent }}%;"></div>
                 </div>
-                <a href="{{ url_for('dashboard.billing') }}" class="btn btn-outline-primary btn-sm mt-2" style="border-radius: 16px;">
+                <a href="{{ url_for('billing') }}" class="btn btn-outline-primary btn-sm mt-2" style="border-radius: 16px;">
                     Mua thêm bộ nhớ
                 </a>
             </div>
@@ -86,8 +86,44 @@
             <h4 class="mb-3">Tệp của tôi</h4>
 
             <table class="table table-hover align-middle bg-white">
-                </table>
-        </div>
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col">Tên</th>
+                        <th scope="col">Ngày sửa đổi</th>
+                        <th scope="col">Kích thước</th>
+                        <th scope="col">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if files %}
+                        {% for file in files %}
+                        <tr>
+                            <td>
+                                <i class="bi bi-file-earmark-text me-2"></i>
+                                {{ file.object_name.split('/')[-1] }}
+                            </td>
+                            <td>{{ file.last_modified }}</td>
+                            <td>{{ "%.1f"|format(file.size_mb) }} MB</td>
+                            <td>
+                                <a href="{{ url_for('api_get_download_url', object_name=file.object_name) }}" class="btn btn-light btn-sm" title="Xem/Tải về" target="_blank">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <button class="btn btn-outline-danger btn-sm" title="Xóa">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted p-4">
+                                Khu vực này trống. Hãy bấm "Mới" để tải tệp lên!
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+            </div>
     </div>
 </div>
 

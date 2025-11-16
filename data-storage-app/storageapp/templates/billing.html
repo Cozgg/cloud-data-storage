@@ -8,14 +8,11 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
 {% endblock %}
 
-
 {% block content %}
 <div class="drive-container">
-
     <div class="drive-header">
         <img src="{{ url_for('static', filename='images/icon_cloud.jpg') }}" alt="Logo" class="drive-logo">
-        <span class="fs-4 me-4">Drive</span>
-
+        <span class="fs-4 me-4">Storage Cloud</span>
         <div class="drive-actions">
             <button class="btn-icon"><i class="bi bi-gear fs-4"></i></button>
             <div class="dropdown ms-2">
@@ -24,40 +21,80 @@
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
                     <li><h6 class="dropdown-header">Chào, {{ current_user.name }}!</h6></li>
-                    <li><a class="dropdown-item" href="{{ url_for('dashboard.billing') }}">Quản lý thanh toán</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('billing') }}">Quản lý thanh toán</a></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item text-danger" href="{{ url_for('main.user_logout') }}">
+                    <li><a class="dropdown-item text-danger" href="{{ url_for('user_logout') }}">
                         <i class="bi bi-box-arrow-right me-2"></i>Đăng xuất
                     </a></li>
                 </ul>
             </div>
         </div>
     </div>
-
     <div class="drive-body">
-
         <div class="drive-sidebar">
             <button type="button" class="btn btn-light btn-lg shadow-sm mb-3 w-100 btn-new" data-bs-toggle="modal" data-bs-target="#uploadModal">
                 <i class="bi bi-plus-lg"></i> Mới
             </button>
             <div class="nav flex-column nav-pills" role="tablist">
-                <a class="nav-link" href="{{ url_for('dashboard.user_dashboard') }}">
+                <a class="nav-link" href="{{ url_for('user_dashboard') }}">
                     <i class="bi bi-house-door-fill"></i> Tệp của tôi
                 </a>
-                <a class="nav-link active" href="{{ url_for('dashboard.billing') }}">
+                <a class="nav-link active" href="{{ url_for('billing') }}">
                     <i class="bi bi-credit-card"></i> Thanh toán
                 </a>
             </div>
+            <div class="quota-bar">
+                <p>Đã dùng: {{ "%.2f"|format(usage_gb) }} GB / {{ "%.0f"|format(limit_gb) }} GB</p>
+                <div class="progress">
+                    <div class="progress-bar" role="progressbar" style="width: {{ quota_percent }}%;"></div>
+                </div>
+                <a href="{{ url_for('billing') }}" class="btn btn-outline-primary btn-sm mt-2" style="border-radius: 16px;">
+                    Mua thêm bộ nhớ
+                </a>
             </div>
-
+        </div>
         <div class="drive-content">
             <h4 class="mb-3">
                 <i class="bi bi-credit-card"></i> Quản lý Gói cước và Dung lượng
             </h4>
-
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Dung lượng của bạn (Gói Free)</h5>
+                    <p>Đã dùng: {{ "%.2f"|format(usage_gb) }} GB / {{ "%.0f"|format(limit_gb) }} GB</p>
+                    <div class="progress" style="height: 25px;">
+                        <div class="progress-bar" role="progressbar" style="width: {{ quota_percent }}%;" aria-valuenow="{{ quota_percent }}" aria-valuemin="0" aria-valuemax="100">{{ "%.0f"|format(quota_percent) }}%</div>
+                    </div>
+                </div>
             </div>
-    </div>
+            <h5 class="mb-3">Nâng cấp gói cước</h5>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card text-center shadow-sm">
+                        <div class="card-header fs-5">Miễn phí</div>
+                        <div class="card-body">
+                            <h5 class="card-title display-5">0đ</h5>
+                            <p class="card-text">Dung lượng: 15 GB</p>
+                            <button class="btn btn-secondary" disabled>
+                                <i class="bi bi-check-circle"></i> Gói hiện tại
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center text-white bg-primary shadow">
+                        <div class="card-header fs-5">Pro</div>
+                        <div class="card-body">
+                            <h5 class="card-title display-5">50.000đ</h5>
+                            <p class="card-text">Dung lượng: 100 GB</p>
+                            <a href="{{ url_for('create_payment') }}" class="btn btn-light fw-bold">
+                                <i class="bi bi-arrow-up-circle"></i> Nâng cấp ngay
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
 </div>
-
 {% include 'includes/upload_modal.html' %}
 {% endblock %}

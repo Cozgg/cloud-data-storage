@@ -1,47 +1,48 @@
-
+import os
 from datetime import datetime
+from storageapp.minio_client import minio_client  # Giữ nguyên
 
-from storageapp.minio_client import minio_client
+DEFAULT_BUCKET = "my-bucket"  # Tên bucket của bạn
 
 
-def upload_file_to_minio(bucket_name, object_name, data_stream, data_length):
-    """
-        Upload một file stream lên MinIO.
-        object_name: Tên file trên MinIO (ví dụ: "user_1/image.png")
-        data_stream: Dữ liệu file (ví dụ: request.files['myFile'].stream)
-        data_length: Kích thước file (ví dụ: request.files['myFile'].tell())
-        """
-
+def upload_file_to_minio(object_name, data_stream, data_length):
     if not minio_client:
         raise Exception("MinIO client chưa được khởi tạo")
 
     try:
+        # --- MỚI: KIỂM TRA VÀ TẠO BUCKET ---
+        found = minio_client.bucket_exists(DEFAULT_BUCKET)
+        if not found:
+            minio_client.make_bucket(DEFAULT_BUCKET)
+            print(f"Đã tạo bucket '{DEFAULT_BUCKET}' vì nó không tồn tại.")
+        # --- KẾT THÚC THÊM ---
+
+        data_stream.seek(0) # Đảm bảo stream ở đầu
+
         minio_client.put_object(
-            bucket_name,
+            DEFAULT_BUCKET,
             object_name,
             data_stream,
             length=data_length
         )
-        print(f"Tải dữ liệu {object_name} lên thành công")
-        return True
+        print(f"Tải {object_name} lên thành công")
+        return True, data_length
     except Exception as e:
         print(f"Lỗi khi tải file lên: {e}")
-        return False
+        return False, 0
 
 
-def get_presigned_download_url(bucket_name, object_name):
-
+def get_presigned_download_url(object_name):
+    # ... (Hàm này giữ nguyên) ...
     if not minio_client:
         raise Exception("MinIO client chưa được khởi tạo")
 
     try:
-        #thời gian time out là 1 giờ
         url = minio_client.get_presigned_url(
-            bucket_name,
+            DEFAULT_BUCKET,
             object_name,
             expires=datetime.timedelta(hours=1)
         )
-        print(f"Tạo link download cho {object_name} thành công!")
         return url
     except Exception as e:
         print(f"Lỗi khi tạo link download: {e}")

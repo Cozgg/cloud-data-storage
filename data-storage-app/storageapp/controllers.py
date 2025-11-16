@@ -1,47 +1,101 @@
 import os
+from flask import request, jsonify
 from datetime import datetime
-from storageapp.minio_client import minio_client  # Giữ nguyên
 
-DEFAULT_BUCKET = "my-bucket"  # (Nên tạo bucket này trước)
+from storageapp.test_helpers import (
+    upload_file_to_minio,
+    get_presigned_download_url,
+    delete_file_from_minio
+)
 
+DEFAULT_BUCKET = "my-bucket"
+"""
+    object_name: Tên đầy đủ của file trên MinIO (bao gồm cả thư mục nếu có).
+"""
+def api_upload_file():
 
-def upload_file_to_minio(object_name, data_stream):
-    if not minio_client:
-        raise Exception("MinIO client chưa được khởi tạo")
+    if 'file' not in request.files:
+        return jsonify({"error": "Không tìm thấy file trong request"}), 400
+
+    file = request.files['file']
+
+    if file.filename == '':
+        return jsonify({"error": "Tên file không được để trống"}), 400
+
+    if file:
+        try:
+            object_name = file.filename
+
+            file.stream.seek(0, os.SEEK_END)
+            data_length = file.stream.tell()
+            file.stream.seek(0)
+
+            success = upload_file_to_minio(
+                bucket_name=DEFAULT_BUCKET,
+                object_name=object_name,
+                data_stream=file.stream,
+                data_length=data_length
+            )
+
+            if success:
+                return jsonify({
+                    "message": "Tải file lên thành công",
+                    "bucket": DEFAULT_BUCKET,
+                    "object_name": object_name
+                }), 201
+            else:
+                return jsonify({"error": "Không thể tải file lên"}), 500
+
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    return jsonify({"error": "Đã xảy ra lỗi không xác định"}), 500
+
+def api_get_download_url(object_name):
+
+    if not object_name:
+        return jsonify({"error": "Thiếu tên file (object_name)"}), 400
 
     try:
-        # Refactor lại từ code gốc
-        data_stream.seek(0, os.SEEK_END)
-        data_length = data_stream.tell()
-        data_stream.seek(0)
-
-        minio_client.put_object(
-            DEFAULT_BUCKET,
-            object_name,
-            data_stream,
-            length=data_length
+        url = get_presigned_download_url(
+            bucket_name=DEFAULT_BUCKET,
+            object_name=object_name
         )
-        print(f"Tải {object_name} lên thành công")
-        return True, data_length
+
+        if url:
+            return jsonify({
+                "message": "Lấy URL thành công",
+                "url": url,
+                "object_name": object_name,
+                "expires_in": "1 giờ"
+            }), 200
+        else:
+
+            return jsonify({"error": "Không thể tạo URL (file có thể không tồn tại)"}), 404
+
     except Exception as e:
-        print(f"Lỗi khi tải file lên: {e}")
-        return False, 0
+        return jsonify({"error": str(e)}), 500
 
-
-def get_presigned_download_url(object_name):
-    if not minio_client:
-        raise Exception("MinIO client chưa được khởi tạo")
+def api_delete_file(object_name):
+    """
+     object_name: Tên đầy đủ của file trên MinIO.
+    """
+    if not object_name:
+        return jsonify({"error": "Thiếu tên file (object_name)"}), 400
 
     try:
-        # Giữ nguyên logic
-        url = minio_client.get_presigned_url(
-            DEFAULT_BUCKET,
-            object_name,
-            expires=datetime.timedelta(hours=1)
+        success = delete_file_from_minio(
+            bucket_name=DEFAULT_BUCKET,
+            object_name=object_name
         )
-        return url
-    except Exception as e:
-        print(f"Lỗi khi tạo link download: {e}")
-        return None
 
-# ... (Thêm hàm delete_file_from_minio) ...
+        if success:
+            return jsonify({
+                "message": "Xóa file thành công",
+                "object_name": object_name
+            }), 200
+        else:
+            return jsonify({"error": "Không thể xóa file (file có thể không tồn tại)"}), 404
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

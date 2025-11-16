@@ -8,47 +8,41 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
 {% endblock %}
 
-
 {% block content %}
 <div class="drive-container">
-
     <div class="drive-header">
         <img src="{{ url_for('static', filename='images/icon_cloud.jpg') }}" alt="Logo" class="drive-logo">
-        <span class="fs-4 me-4 text-danger">Admin Panel</span>
+        <span class="fs-4 me-4">Storage Cloud</span>
+        <span class="fs-5 text-danger">(Admin)</span>
 
-        <form class="drive-search position-relative" method="get" action="{{ url_for('admin.admin_dashboard') }}">
+        <form class="drive-search position-relative" method="get" action="{{ url_for('admin_dashboard') }}">
             <i class="bi bi-search drive-search-icon"></i>
             <input class="form-control" type="text" placeholder="Tìm User, tìm File..." name="q" value="{{ request.args.get('q', '') }}">
         </form>
 
         <div class="drive-actions">
             <span class="fs-5 me-3">Chào, {{ current_user.name }}!</span>
-            <a href="{{ url_for('main.user_logout') }}" class="btn-icon"><i class="bi bi-box-arrow-right fs-4"></i></a>
+            <a href="{{ url_for('user_logout') }}" class="btn-icon"><i class="bi bi-box-arrow-right fs-4"></i></a>
         </div>
     </div>
-
     <div class="drive-body">
-
         <div class="drive-sidebar">
             <button type="button" class="btn btn-danger btn-lg shadow-sm mb-3 w-100 btn-new">
                 <i class="bi bi-plus-lg"></i> Tạo Gói Mới
             </button>
-
             <div class="nav flex-column nav-pills" role="tablist">
-                <a class="nav-link active" href="{{ url_for('admin.admin_dashboard') }}">
+                <a class="nav-link active" href="{{ url_for('admin_dashboard') }}">
                     <i class="bi bi-bar-chart-fill"></i> Thống kê
                 </a>
                 <a class="nav-link" href="#">
                     <i class="bi bi-people-fill"></i> Quản lý User
                 </a>
-                </div>
+            </div>
         </div>
-
         <div class="drive-content">
             <h4 class="mb-3">
                 <i class="bi bi-bar-chart-fill"></i> Thống kê hệ thống
             </h4>
-
             </div>
     </div>
 </div>
