@@ -1,4 +1,4 @@
-from storageapp import db
+from storageapp import db, app
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, Boolean, DateTime, Enum
 from sqlalchemy.orm import relationship
 from flask_login import UserMixin
@@ -39,3 +39,7 @@ class BillingPackage(Base):
     name = Column(String(150), unique=True)
     price = Column(Float, default=0.0)
     storage_limit_gb = Column(Integer, default=15)
+
+if __name__ == "__main__":
+    with app.app_context():
+        db.create_all()
