@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from storageapp.minio_client import minio_client  # Giữ nguyên
 
 DEFAULT_BUCKET = "my-bucket"  # Tên bucket của bạn
@@ -39,9 +39,10 @@ def get_presigned_download_url(object_name):
 
     try:
         url = minio_client.get_presigned_url(
+            'GET',
             DEFAULT_BUCKET,
             object_name,
-            expires=datetime.timedelta(hours=1)
+            expires=timedelta(hours=1)
         )
         return url
     except Exception as e:

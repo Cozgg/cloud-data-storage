@@ -100,8 +100,6 @@ def get_user_quota_limit(user_id):
 def add_file_record(user_id, object_name, size_mb):
 
     files = load_files()
-
-
     new_file = {
         "id": len(files) + 101,
         "object_name": object_name,
@@ -119,3 +117,26 @@ def add_file_record(user_id, object_name, size_mb):
     except Exception as e:
         print(f"Lỗi khi ghi file JSON: {e}")
         return False
+
+
+def delete_file_record(object_name):
+    """
+    Tìm và xóa một bản ghi file khỏi files.json dựa trên object_name.
+    """
+    files = load_files()
+
+    # Tạo một danh sách mới chứa tất cả các file KHÔNG trùng object_name
+    files_to_keep = [f for f in files if f.get('object_name') != object_name]
+
+    # Nếu độ dài danh sách cũ và mới khác nhau, tức là đã có file bị xóa
+    if len(files_to_keep) < len(files):
+        try:
+            # Ghi đè file json bằng danh sách đã được lọc
+            with open(files_path, 'w', encoding='utf-8') as f:
+                json.dump(files_to_keep, f, indent=2)
+            return True
+        except Exception as e:
+            print(f"Lỗi khi ghi file JSON (xóa): {e}")
+            return False
+
+    return False

@@ -105,9 +105,15 @@
                                 <a href="{{ url_for('api_get_download_url', object_name=file.object_name) }}" class="btn btn-light btn-sm" title="Xem/Tải về" target="_blank">
                                     <i class="bi bi-eye"></i>
                                 </a>
-                                <button class="btn btn-outline-danger btn-sm" title="Xóa">
-                                    <i class="bi bi-trash"></i>
-                                </button>
+                               <form action="{{ url_for('api_delete_file', object_name=file.object_name) }}"
+                                      method="POST"
+                                      style="display: inline;"
+                                      onsubmit="return confirm('Bạn có chắc chắn muốn xóa file \'{{ file.object_name.split('/')[-1] }}\'?');">
+
+                                    <button type="submit" class="btn btn-outline-danger btn-sm" title="Xóa">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                         {% endfor %}

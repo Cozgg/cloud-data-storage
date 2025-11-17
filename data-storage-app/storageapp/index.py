@@ -8,6 +8,7 @@ import requests
 from flask import render_template, request, redirect, url_for, flash, Blueprint
 from flask_login import login_user, logout_user, current_user, login_required
 from storageapp import app, dao, login, controllers
+from storageapp.test_helpers import delete_file_from_minio, DEFAULT_BUCKET
 
 login.login_view = 'user_login'
 login.login_message = 'Vui lòng đăng nhập để xem trang này!'
@@ -217,6 +218,39 @@ def api_get_download_url(object_name):
         return redirect(url)
     return "Không tìm thấy file hoặc có lỗi", 404
 
+
+@app.route('/delete-file/<path:object_name>', methods=['POST'])
+@login_required
+def api_delete_file(object_name):
+
+    # 1. Lấy danh sách file của user hiện tại
+    user_files = dao.get_files_for_user(current_user.id)
+
+    # 2. Kiểm tra xem file họ muốn xóa có thực sự thuộc về họ không
+    # (Tạo một danh sách các object_name mà user này sở hữu)
+    owned_object_names = [f.get('object_name') for f in user_files]
+
+    if object_name not in owned_object_names:
+        flash('Bạn không có quyền xóa file này!', 'danger')
+        return redirect(url_for('user_dashboard'))
+
+    try:
+        delete_minio_success = delete_file_from_minio(DEFAULT_BUCKET, object_name)
+
+        if delete_minio_success:
+            delete_db_success = dao.delete_file_record(object_name)
+
+            if delete_db_success:
+                flash('Đã xóa file thành công!', 'success')
+            else:
+                flash('Lỗi khi xóa bản ghi file trong CSDL.', 'warning')
+        else:
+            flash('Không thể xóa file trên MinIO (File có thể không tồn tại).', 'danger')
+
+    except Exception as e:
+        flash(f'Lỗi hệ thống khi xóa file: {e}', 'danger')
+
+    return redirect(url_for('user_dashboard'))
 
 # --- 6. TÍCH HỢP THANH TOÁN MOMO ---
 
