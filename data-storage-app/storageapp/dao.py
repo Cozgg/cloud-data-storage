@@ -1,142 +1,69 @@
+import hashlib
 import json
 import os
 
+from sqlalchemy import func
 
-# ... (Giữ nguyên class MockUser) ...
-
-# --- Lớp MockUser ---
-class MockUser:
-    def __init__(self, id, name, role):
-        self.id = id
-        self.name = name
-        self.role = role
-
-    def is_authenticated(self):
-        return True
-
-    def is_active(self):
-        return True
-
-    def is_anonymous(self):
-        return False
-
-    def get_id(self):
-        return str(self.id)
-
-
-base_dir = os.path.abspath(os.path.dirname(__file__))
-users_path = os.path.join(base_dir, 'data', 'user.json')
-files_path = os.path.join(base_dir, 'data', 'files.json')
-
-
-def load_users():
-    try:
-        with open(users_path, encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return []
-
-
-def load_files():
-    try:
-        with open(files_path, encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return []
+from storageapp import db
+from storageapp.models import User, File
 
 
 def auth_user(username, password):
-    users = load_users()
-    for u in users:
-        if u['username'] == username and u['password'] == password:
-            return u
-    return None
+    password = str(hashlib.md5(password.encode('utf-8')).hexdigest())
+    user = User.query.filter(User.username.__eq__(username), User.password.__eq__(password))
+
+    return user.first()
 
 
 def get_user_by_id(user_id):
-    users = load_users()
-    for u in users:
-        if u['id'] == int(user_id):
-            return MockUser(id=u['id'], name=u['name'], role=u['role'])
-    return None
-
+    user = User.query.get(user_id)
+    return user
 
 
 def get_files_for_user(user_id, q=None):
-    files = load_files()
-    user_files = [f for f in files if f['user_id'] == user_id]
-
+    """Lấy danh sách file của user từ RDS."""
+    query = File.query.filter_by(user_id=user_id)
     if q:
-        q_lower = q.lower()
-        user_files = [f for f in user_files if q_lower in f["object_name"].lower()]
-
-    return user_files
+        query = query.filter(File.name.like(f"%{q}%"))
+    return query.all()
 
 
-def get_all_files(q=None):
-    files = load_files()
-    if q:
-        q_lower = q.lower()
-        files = [f for f in files if q_lower in f["object_name"].lower()]
-    return files
+def get_all_files():
+    return File.query.all()
 
 
 def get_all_users():
-    return load_users()
-
-
+    return User.query.all()
 
 
 def get_user_storage_usage(user_id):
-    files = get_files_for_user(user_id)
-    total_mb = sum(f.get('size_mb', 0) for f in files)
-    return total_mb
+    usage = db.session.query(func.sum(File.size_mb)) \
+        .filter_by(user_id=user_id).scalar()
+    return usage or 0
 
 
 def get_user_quota_limit(user_id):
     return 15 * 1024
 
 
-def add_file_record(user_id, object_name, size_mb):
-
-    files = load_files()
-    new_file = {
-        "id": len(files) + 101,
-        "object_name": object_name,
-        "size_mb": size_mb,
-        "last_modified": "2025-11-15",
-        "user_id": user_id
-    }
-    files.append(new_file)
+def add_file_record(user_id, file_name, size_mb):
+    new_file = File(
+        name=file_name,
+        size_mb=size_mb,
+        user_id=user_id
+    )
+    db.session.add(new_file)
+    db.session.commit()
+    return new_file
 
 
-    try:
-        with open(files_path, 'w', encoding='utf-8') as f:
-            json.dump(files, f, indent=2)
-        return True
-    except Exception as e:
-        print(f"Lỗi khi ghi file JSON: {e}")
-        return False
-
-
-def delete_file_record(object_name):
-    """
-    Tìm và xóa một bản ghi file khỏi files.json dựa trên object_name.
-    """
-    files = load_files()
-
-    # Tạo một danh sách mới chứa tất cả các file KHÔNG trùng object_name
-    files_to_keep = [f for f in files if f.get('object_name') != object_name]
-
-    # Nếu độ dài danh sách cũ và mới khác nhau, tức là đã có file bị xóa
-    if len(files_to_keep) < len(files):
-        try:
-            # Ghi đè file json bằng danh sách đã được lọc
-            with open(files_path, 'w', encoding='utf-8') as f:
-                json.dump(files_to_keep, f, indent=2)
-            return True
-        except Exception as e:
-            print(f"Lỗi khi ghi file JSON (xóa): {e}")
-            return False
+def delete_file_record(file_record):
+    db.session.delete(file_record)
+    db.session.commit()
 
     return False
+
+
+def get_file_by_id(file_id, user_id):
+    """Lấy 1 file và kiểm tra quyền sở hữu."""
+    return File.query.filter_by(id=file_id, user_id=user_id).first()

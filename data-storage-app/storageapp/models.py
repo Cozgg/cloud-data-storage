@@ -29,14 +29,12 @@ class User(Base, UserMixin):
 
 
 class File(Base):
-    object_name = Column(String(300), nullable=False)
     size_mb = Column(Float, default=0.0)
     last_modified = Column(DateTime, default=datetime.now())
     user_id = Column(Integer, ForeignKey(User.id), nullable=False)
 
 
 class BillingPackage(Base):
-    name = Column(String(150), unique=True)
     price = Column(Float, default=0.0)
     storage_limit_gb = Column(Integer, default=15)
 

@@ -7,7 +7,8 @@ import uuid
 import requests
 from flask import render_template, request, redirect, url_for, flash, Blueprint
 from flask_login import login_user, logout_user, current_user, login_required
-from storageapp import app, dao, login, controllers
+from storageapp import app, dao, login, controllers, db
+from storageapp.models import User, UserRole
 from storageapp.test_helpers import delete_file_from_minio, DEFAULT_BUCKET
 
 login.login_view = 'user_login'
@@ -23,12 +24,11 @@ def load_user(user_id):
 @app.route("/")
 def homepage():
     if current_user.is_authenticated:
-        if current_user.role == 'ADMIN':
+        if current_user.role == UserRole.ADMIN:
             return redirect(url_for('admin_dashboard'))
         else:
             return redirect(url_for('user_dashboard'))
     return render_template("homepage.html")
-
 
 
 @app.route("/logout")
@@ -50,8 +50,7 @@ def user_login():
         user_dict = dao.auth_user(username, password)
 
         if user_dict:
-            user_obj = dao.get_user_by_id(user_dict['id'])
-            login_user(user_obj)
+            login_user(user=user_dict)
 
             next_page = request.args.get('next')
             if next_page:
@@ -78,18 +77,26 @@ def user_register():
         if password != confirm:
             err_msg = "Mật khẩu xác nhận không khớp!"
         else:
-            err_msg = "Chức năng đăng ký đang được bảo trì."
-            # (Logic tạo user...)
+            try:
+                passwordhash = hashlib.md5(password.encode('utf-8')).hexdigest()
+                u = User(
+                    name=name,
+                    username=username,
+                    password=passwordhash,
+                    avatar=None,
+                )
+                db.session.add(u)
+                db.session.commit()
+            except Exception as e:
+                err_msg = str(e)
 
     return render_template("register.html", err_msg=err_msg)
-
-
 
 
 @app.route("/dashboard")
 @login_required
 def user_dashboard():
-    if current_user.role != 'USER':
+    if current_user.role != UserRole.USER:
         return redirect(url_for('admin_dashboard'))
 
     q = request.args.get("q")
@@ -126,11 +133,10 @@ def billing():
                            quota_percent=quota_percent)
 
 
-
 @app.route("/admin")
 @login_required
 def admin_dashboard():
-    if current_user.role != 'ADMIN':
+    if current_user.role != UserRole.ADMIN:
         return redirect(url_for('user_dashboard'))
 
     all_users = dao.get_all_users()
@@ -154,7 +160,7 @@ def admin_dashboard():
 @login_required
 def admin_users():
     """Trang quản lý User cho Admin"""
-    if current_user.role != 'ADMIN':
+    if current_user.role != UserRole.ADMIN:
         return redirect(url_for('user_dashboard'))
 
     q = request.args.get("q")
@@ -222,7 +228,6 @@ def api_get_download_url(object_name):
 @app.route('/delete-file/<path:object_name>', methods=['POST'])
 @login_required
 def api_delete_file(object_name):
-
     # 1. Lấy danh sách file của user hiện tại
     user_files = dao.get_files_for_user(current_user.id)
 
@@ -251,6 +256,7 @@ def api_delete_file(object_name):
         flash(f'Lỗi hệ thống khi xóa file: {e}', 'danger')
 
     return redirect(url_for('user_dashboard'))
+
 
 # --- 6. TÍCH HỢP THANH TOÁN MOMO ---
 
@@ -320,7 +326,6 @@ def payment_return():
 
 @app.route('/momo_ipn', methods=['POST'])
 def momo_ipn():
-
     return '', 204
 
 
