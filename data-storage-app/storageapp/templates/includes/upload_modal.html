@@ -5,24 +5,29 @@
                 <h5 class="modal-title fw-bold"><i class="bi bi-cloud-upload me-2"></i>Tải tệp lên</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <!-- Form gửi đến route 'api_upload_file' -->
-            <form action="{{ url_for('api_upload_file') }}" method="post" enctype="multipart/form-data">
-                <div class="modal-body">
-                    <!-- Input hidden để server biết đang upload vào thư mục nào -->
-                    <input type="hidden" name="folder_id" value="{{ current_folder.id if current_folder else '' }}">
 
-                    <div class="mb-3 text-center py-4 border rounded bg-light">
-                        <i class="bi bi-file-earmark-arrow-up fs-1 text-primary"></i>
-                        <p class="mt-2 mb-0 text-muted">Chọn tệp tin từ máy tính của bạn</p>
-                    </div>
+            <div class="modal-body">
+                <input type="hidden" id="uploadFolderId" value="{{ current_folder.id if current_folder else '' }}">
 
-                    <input type="file" class="form-control" name="file" id="fileUpload" required>
+                <div class="mb-3 text-center py-4 border rounded bg-light" id="dropZone">
+                    <i class="bi bi-file-earmark-arrow-up fs-1 text-primary"></i>
+                    <p class="mt-2 mb-0 text-muted">Chọn tệp tin (Không giới hạn kích thước)</p>
                 </div>
-                <div class="modal-footer border-0">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-primary px-4">Tải lên ngay</button>
+
+                <input type="file" class="form-control" id="fileInput">
+
+                <div class="progress mt-3 d-none" id="uploadProgressContainer" style="height: 25px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated"
+                         id="uploadProgressBar" role="progressbar" style="width: 0%;">0%</div>
                 </div>
-            </form>
+
+                <div id="uploadStatus" class="mt-2 text-center text-danger small"></div>
+            </div>
+
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary px-4" id="btnStartUpload">Tải lên ngay</button>
+            </div>
         </div>
     </div>
 </div>

@@ -33,7 +33,6 @@ def upload_file_to_minio(object_name, data_stream, data_length):
 
 
 def get_presigned_download_url(object_name):
-    # ... (Hàm này giữ nguyên) ...
     if not minio_client:
         raise Exception("MinIO client chưa được khởi tạo")
 
@@ -60,3 +59,17 @@ def delete_file_from_minio(bucket_name, object_name):
         print(f"Lỗi khi xóa file: {e}")
         return False
 
+def get_presigned_upload_url(object_name):
+    if not minio_client:
+        raise Exception("MinIO client chưa được khởi tạo")
+    try:
+        url = minio_client.get_presigned_url(
+            "PUT",
+            DEFAULT_BUCKET,
+            object_name,
+            expires=timedelta(hours=1)
+        )
+        return url
+    except Exception as e:
+        print(f"Lỗi tạo URL upload: {e}")
+        return None

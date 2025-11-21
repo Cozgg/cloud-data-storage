@@ -5,7 +5,7 @@ import hashlib
 import time
 import uuid
 import requests
-from flask import render_template, request, redirect, url_for, flash, Blueprint
+from flask import render_template, request, redirect, url_for, flash, Blueprint, jsonify
 from flask_login import login_user, logout_user, current_user, login_required
 from storageapp import app, dao, login, controllers, db
 from storageapp.models import User, UserRole, Transaction
@@ -149,49 +149,65 @@ def create_new_folder():
     return redirect_back(parent_id)
 
 
-@app.route('/upload', methods=['POST'])
+@app.route('/api/get-upload-url', methods=['POST'])
 @login_required
-def api_upload_file():
-    folder_id_str = request.form.get('folder_id')
-    folder_id = int(folder_id_str) if folder_id_str and folder_id_str != 'None' and folder_id_str != '' else None
+def get_upload_url():
+    filename = request.json.get('filename')
+    file_type = request.json.get('file_type')
 
-    if 'file' not in request.files:
-        flash('Không có tệp nào được chọn.', 'danger')
-        return redirect_back(folder_id)
+    if not filename:
+        return jsonify({"error": "Thiếu tên file"}), 400
 
-    file = request.files['file']
-    if file.filename == '':
-        flash('Tên tệp không hợp lệ.', 'danger')
-        return redirect_back(folder_id)
-
-    file.seek(0, os.SEEK_END)
-    file_size_bytes = file.tell()
-    file_size_mb = file_size_bytes / (1024 * 1024)
-    file.seek(0)
-
-    # Check Quota
-    usage_mb = dao.get_user_storage_usage(current_user.id)
-    limit_mb = dao.get_user_quota_limit(current_user.id)
-    if (usage_mb + file_size_mb) > limit_mb:
-        flash('Hết dung lượng lưu trữ!', 'danger')
-        return redirect_back(folder_id)
-
-    object_name = f"user_{current_user.id}/{file.filename}"
-    # Để tránh trùng tên file, có thể thêm UUID:
-    # object_name = f"user_{current_user.id}/{uuid.uuid4()}_{file.filename}"
+    # Tạo object_name (Path trên MinIO)
+    # Lưu ý: Logic đặt tên file giống hệt code cũ của bạn để tránh trùng lặp
+    object_name = f"user_{current_user.id}/{filename}"
 
     try:
-        success, _ = controllers.upload_file_to_minio(object_name, file.stream, file_size_bytes)
-        if success:
-            # Lưu file vào DB kèm theo folder_id
-            dao.add_file_record(current_user.id, object_name, file_size_mb, folder_id)
-            flash('Tải tệp lên thành công!', 'success')
-        else:
-            flash('Lỗi MinIO.', 'danger')
-    except Exception as e:
-        flash(f'Lỗi: {e}', 'danger')
+        # Gọi hàm mới thêm ở test_helpers
+        presigned_url = controllers.get_presigned_upload_url(object_name)
 
-    return redirect_back(folder_id)
+        if presigned_url:
+            return jsonify({
+                "url": presigned_url,
+                "object_name": object_name
+            })
+        else:
+            return jsonify({"error": "Lỗi kết nối MinIO"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/complete-upload', methods=['POST'])
+@login_required
+def complete_upload():
+    """API này được gọi SAU KHI client đã upload thành công lên MinIO"""
+    data = request.json
+    object_name = data.get('object_name')
+    size_bytes = data.get('size_bytes')
+    folder_id_str = data.get('folder_id')
+
+    # Xử lý folder_id
+    folder_id = int(folder_id_str) if folder_id_str and folder_id_str != 'None' and folder_id_str != '' else None
+
+    # Tính toán dung lượng
+    file_size_mb = size_bytes / (1024 * 1024)
+
+    usage_mb = dao.get_user_storage_usage(current_user.id)
+    limit_mb = dao.get_user_quota_limit(current_user.id)
+
+    if (usage_mb + file_size_mb) > limit_mb:
+        # Lưu ý: File đã lên MinIO rồi, nếu hết quota ta nên xóa nó đi hoặc cảnh báo
+        # Ở đây mình trả về lỗi để Frontend báo user
+        delete_file_from_minio(DEFAULT_BUCKET, object_name)
+        return jsonify({"error": "Hết dung lượng lưu trữ!"}), 403
+
+    try:
+        # Lưu vào Database
+        dao.add_file_record(current_user.id, object_name, file_size_mb, folder_id)
+        flash('Tải tệp lên thành công!', 'success')
+        return jsonify({"message": "Saved"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 def redirect_back(folder_id):
