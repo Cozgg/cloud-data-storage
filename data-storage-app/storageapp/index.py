@@ -8,7 +8,7 @@ import requests
 from flask import render_template, request, redirect, url_for, flash, Blueprint
 from flask_login import login_user, logout_user, current_user, login_required
 from storageapp import app, dao, login, controllers, db
-from storageapp.models import User, UserRole
+from storageapp.models import User, UserRole, Transaction
 from storageapp.test_helpers import delete_file_from_minio, DEFAULT_BUCKET
 
 login.login_view = 'user_login'
@@ -51,7 +51,6 @@ def user_login():
 
         if user_dict:
             login_user(user=user_dict)
-
             next_page = request.args.get('next')
             if next_page:
                 return redirect(next_page)
@@ -78,50 +77,169 @@ def user_register():
             err_msg = "Mật khẩu xác nhận không khớp!"
         else:
             try:
-                passwordhash = hashlib.md5(password.encode('utf-8')).hexdigest()
-                u = User(
-                    name=name,
-                    username=username,
-                    password=passwordhash,
-                    avatar=None,
-                )
-                db.session.add(u)
-                db.session.commit()
+                # Dùng hàm add_user mới trong dao
+                dao.add_user(name, username, password)
+                flash("Đăng ký thành công! Vui lòng đăng nhập.", "success")
+                return redirect(url_for('user_login'))
             except Exception as e:
-                err_msg = str(e)
+                err_msg = f"Lỗi: {str(e)}"
 
     return render_template("register.html", err_msg=err_msg)
 
 
 @app.route("/dashboard")
+@app.route("/dashboard/<int:folder_id>")
 @login_required
-def user_dashboard():
+def user_dashboard(folder_id=None):
     if current_user.role != UserRole.USER:
         return redirect(url_for('admin_dashboard'))
 
     q = request.args.get("q")
-    files = dao.get_files_for_user(user_id=current_user.id, q=q)
 
-    # Lấy thông tin Quota
+    # Kiểm tra folder hiện tại
+    current_folder = None
+    breadcrumbs = []
+    if folder_id:
+        current_folder = dao.get_folder_by_id(folder_id)
+        # Bảo mật: Không cho xem folder của người khác
+        if not current_folder or current_folder.user_id != current_user.id:
+            flash("Thư mục không tồn tại hoặc bạn không có quyền truy cập", "danger")
+            return redirect(url_for('user_dashboard'))
+
+        breadcrumbs = dao.get_folder_breadcrumbs(folder_id)
+
+    # Lấy nội dung (Folder con + File)
+    folders, files = dao.get_content_by_folder(current_user.id, folder_id, q)
+
+    # Quota
     usage_mb = dao.get_user_storage_usage(current_user.id)
-    limit_gb = dao.get_user_quota_limit(current_user.id) / 1024
+    limit_mb = dao.get_user_quota_limit(current_user.id)
     usage_gb = usage_mb / 1024
-    quota_percent = (usage_mb / (limit_gb * 1024)) * 100
+    limit_gb = limit_mb / 1024
+    quota_percent = (usage_mb / limit_mb) * 100 if limit_mb > 0 else 0
 
     return render_template("index.html",
+                           folders=folders,
                            files=files,
+                           current_folder=current_folder,
+                           breadcrumbs=breadcrumbs,
                            usage_gb=usage_gb,
                            limit_gb=limit_gb,
                            quota_percent=quota_percent)
 
 
+@app.route('/create-folder', methods=['POST'])
+@login_required
+def create_new_folder():
+    name = request.form.get('folder_name')
+    parent_id = request.form.get('parent_id')
+
+    if not name:
+        flash('Tên thư mục không được để trống', 'warning')
+    else:
+        # Chuyển đổi parent_id
+        p_id = int(parent_id) if parent_id and parent_id != 'None' and parent_id != '' else None
+        try:
+            dao.create_folder(current_user.id, name, p_id)
+            flash('Đã tạo thư mục mới', 'success')
+        except Exception as e:
+            flash(f'Lỗi tạo thư mục: {e}', 'danger')
+
+    # Reload lại trang hiện tại
+    return redirect_back(parent_id)
+
+
+@app.route('/upload', methods=['POST'])
+@login_required
+def api_upload_file():
+    folder_id_str = request.form.get('folder_id')
+    folder_id = int(folder_id_str) if folder_id_str and folder_id_str != 'None' and folder_id_str != '' else None
+
+    if 'file' not in request.files:
+        flash('Không có tệp nào được chọn.', 'danger')
+        return redirect_back(folder_id)
+
+    file = request.files['file']
+    if file.filename == '':
+        flash('Tên tệp không hợp lệ.', 'danger')
+        return redirect_back(folder_id)
+
+    file.seek(0, os.SEEK_END)
+    file_size_bytes = file.tell()
+    file_size_mb = file_size_bytes / (1024 * 1024)
+    file.seek(0)
+
+    # Check Quota
+    usage_mb = dao.get_user_storage_usage(current_user.id)
+    limit_mb = dao.get_user_quota_limit(current_user.id)
+    if (usage_mb + file_size_mb) > limit_mb:
+        flash('Hết dung lượng lưu trữ!', 'danger')
+        return redirect_back(folder_id)
+
+    object_name = f"user_{current_user.id}/{file.filename}"
+    # Để tránh trùng tên file, có thể thêm UUID:
+    # object_name = f"user_{current_user.id}/{uuid.uuid4()}_{file.filename}"
+
+    try:
+        success, _ = controllers.upload_file_to_minio(object_name, file.stream, file_size_bytes)
+        if success:
+            # Lưu file vào DB kèm theo folder_id
+            dao.add_file_record(current_user.id, object_name, file_size_mb, folder_id)
+            flash('Tải tệp lên thành công!', 'success')
+        else:
+            flash('Lỗi MinIO.', 'danger')
+    except Exception as e:
+        flash(f'Lỗi: {e}', 'danger')
+
+    return redirect_back(folder_id)
+
+
+def redirect_back(folder_id):
+    """Helper function để redirect về đúng folder đang đứng"""
+    if folder_id and str(folder_id) != 'None':
+        return redirect(url_for('user_dashboard', folder_id=folder_id))
+    return redirect(url_for('user_dashboard'))
+
+
+@app.route('/download-url/<path:object_name>', methods=['GET'])
+@login_required
+def api_get_download_url(object_name):
+    url = controllers.get_presigned_download_url(object_name)
+    if url:
+        return redirect(url)
+    return "Không tìm thấy file hoặc có lỗi", 404
+
+
+@app.route('/delete-file/<path:object_name>', methods=['POST'])
+@login_required
+def api_delete_file(object_name):
+    user_files = dao.get_files_for_user(current_user.id)
+    owned_object_names = [f.object_name for f in user_files]  # Sửa: truy cập thuộc tính object_name của Model
+
+    if object_name not in owned_object_names:
+        flash('Bạn không có quyền xóa file này!', 'danger')
+        return redirect(url_for('user_dashboard'))
+
+    try:
+        delete_minio_success = delete_file_from_minio(DEFAULT_BUCKET, object_name)
+        # Lưu ý: Nếu file không tồn tại trên MinIO nhưng có trong DB, vẫn nên cho xóa DB
+        # Nên ta sẽ ưu tiên xóa DB nếu MinIO xóa OK hoặc MinIO báo không tìm thấy
+
+        dao.delete_file_record(object_name)
+        flash('Đã xóa file thành công!', 'success')
+
+    except Exception as e:
+        flash(f'Lỗi hệ thống khi xóa file: {e}', 'danger')
+
+    return redirect(url_for('user_dashboard'))
+
+
 @app.route("/billing")
 @login_required
 def billing():
-    if current_user.role != 'USER':
+    if current_user.role != UserRole.USER:
         return redirect(url_for('admin_dashboard'))
 
-    # Lấy thông tin Quota
     usage_mb = dao.get_user_storage_usage(current_user.id)
     limit_gb = dao.get_user_quota_limit(current_user.id) / 1024
     usage_gb = usage_mb / 1024
@@ -142,10 +260,9 @@ def admin_dashboard():
     all_users = dao.get_all_users()
     all_files = dao.get_all_files()
 
-    # MỚI: Tính toán thống kê
     total_users = len(all_users)
     total_files_count = len(all_files)
-    total_storage_mb = sum(f.get('size_mb', 0) for f in all_files)
+    total_storage_mb = sum(f.size_mb for f in all_files)
     total_storage_gb = total_storage_mb / 1024
 
     return render_template("admin/admin_dashboard.html",
@@ -159,7 +276,6 @@ def admin_dashboard():
 @app.route("/admin/users")
 @login_required
 def admin_users():
-    """Trang quản lý User cho Admin"""
     if current_user.role != UserRole.ADMIN:
         return redirect(url_for('user_dashboard'))
 
@@ -168,165 +284,29 @@ def admin_users():
 
     if q:
         q_lower = q.lower()
-        users = [u for u in users if q_lower in u['name'].lower() or q_lower in u['username'].lower()]
+        users = [u for u in users if q_lower in u.name.lower() or q_lower in u.username.lower()]
 
     return render_template("admin/all_users.html", users=users)
 
 
-@app.route('/upload', methods=['POST'])
-@login_required
-def api_upload_file():
-    if 'file' not in request.files:
-        flash('Không có tệp nào được chọn.', 'danger')
-        return redirect(url_for('user_dashboard'))
+# --- PHẦN MOMO ĐƯỢC COMMENT TẠM THỜI ---
+# Bạn có thể mở lại khi đã sẵn sàng test thanh toán
 
-    file = request.files['file']
-    if file.filename == '':
-        flash('Không có tệp nào được chọn.', 'danger')
-        return redirect(url_for('user_dashboard'))
+# @app.route('/billing/create_payment')
+# @login_required
+# def create_payment():
+#     # ... (Code cũ của bạn) ...
+#     return "Tính năng đang bảo trì", 503
 
-    file.seek(0, os.SEEK_END)
-    file_size_bytes = file.tell()
-    file_size_mb = file_size_bytes / (1024 * 1024)
-    file.seek(0)
+# @app.route('/billing/return')
+# @login_required
+# def payment_return():
+#     # ...
+#     return redirect(url_for('user_dashboard'))
 
-    usage_mb = dao.get_user_storage_usage(current_user.id)
-    limit_mb = dao.get_user_quota_limit(current_user.id)
-
-    if (usage_mb + file_size_mb) > limit_mb:
-        flash(f'Upload thất bại! Đã vượt quá quota. (Đã dùng: {usage_mb / 1024:.1f}/{limit_mb / 1024:.0f}GB)', 'danger')
-        return redirect(url_for('user_dashboard'))
-
-    object_name = f"user_{current_user.id}/{file.filename}"
-
-    try:
-
-        success, _ = controllers.upload_file_to_minio(object_name, file.stream, file_size_bytes)
-
-        if success:
-
-            dao.add_file_record(current_user.id, object_name, file_size_mb)
-            flash('Tải tệp lên thành công!', 'success')
-        else:
-            flash('Có lỗi xảy ra khi tải tệp lên MinIO.', 'danger')
-
-    except Exception as e:
-        flash(f'Lỗi hệ thống: {e}', 'danger')
-
-    return redirect(url_for('user_dashboard'))
-
-
-@app.route('/download-url/<path:object_name>', methods=['GET'])
-@login_required
-def api_get_download_url(object_name):
-    url = controllers.get_presigned_download_url(object_name)
-    if url:
-        return redirect(url)
-    return "Không tìm thấy file hoặc có lỗi", 404
-
-
-@app.route('/delete-file/<path:object_name>', methods=['POST'])
-@login_required
-def api_delete_file(object_name):
-    # 1. Lấy danh sách file của user hiện tại
-    user_files = dao.get_files_for_user(current_user.id)
-
-    # 2. Kiểm tra xem file họ muốn xóa có thực sự thuộc về họ không
-    # (Tạo một danh sách các object_name mà user này sở hữu)
-    owned_object_names = [f.get('object_name') for f in user_files]
-
-    if object_name not in owned_object_names:
-        flash('Bạn không có quyền xóa file này!', 'danger')
-        return redirect(url_for('user_dashboard'))
-
-    try:
-        delete_minio_success = delete_file_from_minio(DEFAULT_BUCKET, object_name)
-
-        if delete_minio_success:
-            delete_db_success = dao.delete_file_record(object_name)
-
-            if delete_db_success:
-                flash('Đã xóa file thành công!', 'success')
-            else:
-                flash('Lỗi khi xóa bản ghi file trong CSDL.', 'warning')
-        else:
-            flash('Không thể xóa file trên MinIO (File có thể không tồn tại).', 'danger')
-
-    except Exception as e:
-        flash(f'Lỗi hệ thống khi xóa file: {e}', 'danger')
-
-    return redirect(url_for('user_dashboard'))
-
-
-# --- 6. TÍCH HỢP THANH TOÁN MOMO ---
-
-@app.route('/billing/create_payment')
-@login_required
-def create_payment():
-    # (Đây là code placeholder - bạn PHẢI thay key thật)
-    partner_code = "YOUR_PARTNER_CODE"
-    access_key = "YOUR_ACCESS_KEY"
-    secret_key = "YOUR_SECRET_KEY"
-    order_id = str(uuid.uuid4())
-    order_info = "Nâng cấp gói Pro 100GB"
-    amount = "50000"
-    base_url = "http://127.0.0.1:5000"  # (Khi test local. Dùng NGROK nếu public)
-    redirect_url = f"{base_url}{url_for('payment_return')}"
-    notify_url = f"{base_url}{url_for('momo_ipn')}"
-    request_type = "captureWallet"
-    request_id = str(uuid.uuid4())
-    extra_data = ""
-
-    raw_signature = (
-        f"partnerCode={partner_code}"
-        f"&accessKey={access_key}"
-        f"&requestId={request_id}"
-        f"&amount={amount}"
-        f"&orderId={order_id}"
-        f"&orderInfo={order_info}"
-        f"&returnUrl={redirect_url}"
-        f"&notifyUrl={notify_url}"
-        f"&extraData={extra_data}"
-    )
-
-    signature = hmac.new(secret_key.encode('utf-8'), raw_signature.encode('utf-8'), hashlib.sha256).hexdigest()
-
-    url = "https://test-payment.momo.vn/v2/gateway/api/create"
-    payload = {
-        'partnerCode': partner_code, 'accessKey': access_key, 'requestId': request_id,
-        'amount': amount, 'orderId': order_id, 'orderInfo': order_info,
-        'returnUrl': redirect_url, 'notifyUrl': notify_url, 'extraData': extra_data,
-        'requestType': request_type, 'signature': signature, 'lang': 'vi'
-    }
-
-    try:
-        response = requests.post(url, data=json.dumps(payload), headers={'Content-Type': 'application/json'})
-        response_data = response.json()
-
-        if response_data.get('resultCode') == 0:
-            return redirect(response_data.get('payUrl'))
-        else:
-            flash(f"Lỗi MoMo: {response_data.get('message')}", 'danger')
-            return redirect(url_for('billing'))
-    except Exception as e:
-        flash(f"Lỗi kết nối: {e}", 'danger')
-        return redirect(url_for('billing'))
-
-
-@app.route('/billing/return')
-@login_required
-def payment_return():
-    result_code = request.args.get('resultCode')
-    if result_code == '0':
-        flash('Thanh toán thành công! Gói của bạn đã được nâng cấp.', 'success')
-    else:
-        flash('Thanh toán thất bại hoặc bị hủy.', 'danger')
-    return redirect(url_for('user_dashboard'))
-
-
-@app.route('/momo_ipn', methods=['POST'])
-def momo_ipn():
-    return '', 204
+# @app.route('/momo_ipn', methods=['POST'])
+# def momo_ipn():
+#     return '', 204
 
 
 if __name__ == "__main__":

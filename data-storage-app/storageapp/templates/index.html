@@ -46,9 +46,24 @@
     <div class="drive-body">
 
         <div class="drive-sidebar">
-            <button type="button" class="btn btn-light btn-lg shadow-sm mb-3 w-100 btn-new" data-bs-toggle="modal" data-bs-target="#uploadModal">
-                <i class="bi bi-plus-lg"></i> Mới
-            </button>
+            <!-- SỬA: Nút "Mới" giờ là Dropdown -->
+            <div class="dropdown w-100 mb-3">
+                <button class="btn btn-light btn-lg shadow-sm w-100 btn-new dropdown-toggle" type="button" id="newDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-plus-lg"></i> Mới
+                </button>
+                <ul class="dropdown-menu shadow border-0" aria-labelledby="newDropdown">
+                    <li>
+                        <a class="dropdown-item py-2" href="#" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                            <i class="bi bi-cloud-upload me-2 text-primary"></i>Tải tệp lên
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item py-2" href="#" data-bs-toggle="modal" data-bs-target="#createFolderModal">
+                            <i class="bi bi-folder-plus me-2 text-warning"></i>Thư mục mới
+                        </a>
+                    </li>
+                </ul>
+            </div>
 
             <div class="nav flex-column nav-pills" role="tablist">
                 <a class="nav-link active" href="{{ url_for('user_dashboard') }}">
@@ -80,53 +95,105 @@
               {% endif %}
             {% endwith %}
 
-            <h4 class="mb-3">Tệp của tôi</h4>
+            <!-- MỚI: Breadcrumb (Thanh điều hướng) -->
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb bg-white p-2 rounded align-items-center">
+                    <li class="breadcrumb-item">
+                        <a href="{{ url_for('user_dashboard') }}" class="text-decoration-none fw-bold text-secondary">
+                            <i class="bi bi-hdd-network me-1"></i> Cloud của tôi
+                        </a>
+                    </li>
+                    {% if breadcrumbs %}
+                        {% for crumb in breadcrumbs %}
+                            {% if current_folder and crumb.id == current_folder.id %}
+                                <li class="breadcrumb-item active" aria-current="page">{{ crumb.name }}</li>
+                            {% else %}
+                                <li class="breadcrumb-item">
+                                    <a href="{{ url_for('user_dashboard', folder_id=crumb.id) }}" class="text-decoration-none">{{ crumb.name }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                </ol>
+            </nav>
 
-            <table class="table table-hover align-middle bg-white">
+            <h4 class="mb-3">
+                {% if current_folder %}
+                    {{ current_folder.name }}
+                {% else %}
+                    Tệp tin & Thư mục
+                {% endif %}
+            </h4>
+
+            <table class="table table-hover align-middle bg-white shadow-sm rounded">
                 <thead class="table-light">
                     <tr>
-                        <th scope="col">Tên</th>
+                        <th scope="col" class="ps-3">Tên</th>
                         <th scope="col">Ngày sửa đổi</th>
                         <th scope="col">Kích thước</th>
                         <th scope="col">Hành động</th>
                     </tr>
                 </thead>
                 <tbody>
+                    <!-- Vòng lặp hiển thị FOLDER trước -->
+                    {% if folders %}
+                        {% for folder in folders %}
+                        <tr>
+                            <td class="ps-3">
+                                <a href="{{ url_for('user_dashboard', folder_id=folder.id) }}" class="text-decoration-none text-dark fw-bold d-flex align-items-center">
+                                    <i class="bi bi-folder-fill text-warning me-3 fs-4"></i>
+                                    {{ folder.name }}
+                                </a>
+                            </td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>
+                                <!-- Có thể thêm nút sửa/xóa folder sau này -->
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+
+                    <!-- Vòng lặp hiển thị FILE sau -->
                     {% if files %}
                         {% for file in files %}
                         <tr>
-                            <td>
-                                <i class="bi bi-file-earmark-text me-2"></i>
-                                {{ file.object_name.split('/')[-1] }}
+                            <td class="ps-3">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-file-earmark-text me-3 fs-5 text-primary"></i>
+                                    <span class="text-truncate" style="max-width: 250px;">{{ file.name }}</span>
+                                </div>
                             </td>
-                            <td>{{ file.last_modified }}</td>
-                            <td>{{ "%.1f"|format(file.size_mb) }} MB</td>
+                            <td>{{ file.last_modified.strftime('%d/%m/%Y') if file.last_modified else '' }}</td>
+                            <td>{{ "%.2f"|format(file.size_mb) }} MB</td>
                             <td>
-                                <a href="{{ url_for('api_get_download_url', object_name=file.object_name) }}" class="btn btn-light btn-sm" title="Xem/Tải về" target="_blank">
+                                <a href="{{ url_for('api_get_download_url', object_name=file.object_name) }}" class="btn btn-light btn-sm rounded-circle" title="Xem/Tải về" target="_blank">
                                     <i class="bi bi-eye"></i>
                                 </a>
                                <form action="{{ url_for('api_delete_file', object_name=file.object_name) }}"
                                       method="POST"
                                       style="display: inline;"
-                                      onsubmit="return confirm('Bạn có chắc chắn muốn xóa file \'{{ file.object_name.split('/')[-1] }}\'?');">
-
-                                    <button type="submit" class="btn btn-outline-danger btn-sm" title="Xóa">
+                                      onsubmit="return confirm('Bạn có chắc chắn muốn xóa file \'{{ file.name }}\'?');">
+                                    <button type="submit" class="btn btn-light btn-sm rounded-circle text-danger" title="Xóa">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </form>
                             </td>
                         </tr>
                         {% endfor %}
-                    {% else %}
+                    {% endif %}
+
+                    {% if not files and not folders %}
                         <tr>
-                            <td colspan="4" class="text-center text-muted p-4">
-                                Khu vực này trống. Hãy bấm "Mới" để tải tệp lên!
+                            <td colspan="4" class="text-center text-muted p-5">
+                                <img src="https://cdn-icons-png.flaticon.com/512/7486/7486744.png" width="64" class="mb-3 opacity-50" alt="Empty">
+                                <p>Thư mục trống. Hãy tạo thư mục mới hoặc tải tệp lên!</p>
                             </td>
                         </tr>
                     {% endif %}
                 </tbody>
             </table>
-            </div>
+        </div>
     </div>
 </div>
 
