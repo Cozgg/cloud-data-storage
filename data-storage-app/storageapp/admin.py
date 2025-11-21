@@ -28,7 +28,6 @@ class BillingView(AuthenticatedModelView):
 
 class MyAdminIndexView(AdminIndexView):
     def is_accessible(self) -> bool:
-        # Trả về True chỉ khi người dùng đã đăng nhập VÀ có role là ADMIN
         return current_user.is_authenticated and current_user.role == UserRole.ADMIN
     @expose('/')
     def index(self):
