@@ -35,7 +35,7 @@ class Folder(Base):
     user_id = Column(Integer, ForeignKey(User.id), nullable=False)
 
     sub_folders = relationship('Folder',
-                               backref=db.backref('parent', remote_side=[Base.id]),
+                               backref=db.backref('parent', remote_side='Folder.id'),
                                lazy=True)
     files = relationship('File', backref='folder', lazy=True)
 

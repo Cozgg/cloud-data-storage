@@ -1,22 +1,26 @@
-<div class="modal fade" id="createFolderModal" tabindex="-1">
+<div class="modal fade" id="uploadModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title fw-bold"><i class="bi bi-folder-plus me-2"></i>Tạo thư mục mới</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title fw-bold"><i class="bi bi-cloud-upload me-2"></i>Tải tệp lên</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{{ url_for('create_new_folder') }}" method="post">
+            <!-- Form gửi đến route 'api_upload_file' -->
+            <form action="{{ url_for('api_upload_file') }}" method="post" enctype="multipart/form-data">
                 <div class="modal-body">
-                    <input type="hidden" name="parent_id" value="{{ current_folder.id if current_folder else '' }}">
+                    <!-- Input hidden để server biết đang upload vào thư mục nào -->
+                    <input type="hidden" name="folder_id" value="{{ current_folder.id if current_folder else '' }}">
 
-                    <div class="mb-3">
-                        <label class="form-label text-muted">Tên thư mục</label>
-                        <input type="text" class="form-control form-control-lg" name="folder_name" required placeholder="Ví dụ: Tài liệu học tập" autofocus>
+                    <div class="mb-3 text-center py-4 border rounded bg-light">
+                        <i class="bi bi-file-earmark-arrow-up fs-1 text-primary"></i>
+                        <p class="mt-2 mb-0 text-muted">Chọn tệp tin từ máy tính của bạn</p>
                     </div>
+
+                    <input type="file" class="form-control" name="file" id="fileUpload" required>
                 </div>
                 <div class="modal-footer border-0">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-primary px-4">Tạo</button>
+                    <button type="submit" class="btn btn-primary px-4">Tải lên ngay</button>
                 </div>
             </form>
         </div>

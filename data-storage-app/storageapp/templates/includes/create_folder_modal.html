@@ -1,0 +1,24 @@
+
+<div class="modal fade" id="createFolderModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="bi bi-folder-plus me-2"></i>Tạo thư mục mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('create_new_folder') }}" method="post">
+                <div class="modal-body">
+                    <input type="hidden" name="parent_id" value="{{ current_folder.id if current_folder else '' }}">
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Tên thư mục</label>
+                        <input type="text" class="form-control form-control-lg" name="folder_name" required placeholder="Ví dụ: Tài liệu học tập" autofocus>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary px-4">Tạo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

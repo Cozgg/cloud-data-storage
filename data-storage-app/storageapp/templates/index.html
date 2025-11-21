@@ -46,7 +46,6 @@
     <div class="drive-body">
 
         <div class="drive-sidebar">
-            <!-- SỬA: Nút "Mới" giờ là Dropdown -->
             <div class="dropdown w-100 mb-3">
                 <button class="btn btn-light btn-lg shadow-sm w-100 btn-new dropdown-toggle" type="button" id="newDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="bi bi-plus-lg"></i> Mới
@@ -74,8 +73,17 @@
                 </a>
             </div>
 
+            <!-- SỬA ĐOẠN NÀY: Logic hiển thị MB hoặc GB -->
             <div class="quota-bar">
-                <p>Đã dùng: {{ "%.2f"|format(usage_gb) }} GB / {{ "%.0f"|format(limit_gb) }} GB</p>
+                <p class="mb-1 text-muted small">Đã dùng:</p>
+                <p class="fw-bold">
+                    {% if usage_gb < 1 %}
+                        {{ "%.2f"|format(usage_gb * 1024) }} MB
+                    {% else %}
+                        {{ "%.2f"|format(usage_gb) }} GB
+                    {% endif %}
+                    <span class="text-muted fw-normal">/ {{ "%.0f"|format(limit_gb) }} GB</span>
+                </p>
                 <div class="progress">
                     <div class="progress-bar" role="progressbar" style="width: {{ quota_percent }}%;"></div>
                 </div>
@@ -95,7 +103,6 @@
               {% endif %}
             {% endwith %}
 
-            <!-- MỚI: Breadcrumb (Thanh điều hướng) -->
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb bg-white p-2 rounded align-items-center">
                     <li class="breadcrumb-item">
@@ -135,7 +142,6 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- Vòng lặp hiển thị FOLDER trước -->
                     {% if folders %}
                         {% for folder in folders %}
                         <tr>
@@ -147,14 +153,11 @@
                             </td>
                             <td>-</td>
                             <td>-</td>
-                            <td>
-                                <!-- Có thể thêm nút sửa/xóa folder sau này -->
-                            </td>
+                            <td></td>
                         </tr>
                         {% endfor %}
                     {% endif %}
 
-                    <!-- Vòng lặp hiển thị FILE sau -->
                     {% if files %}
                         {% for file in files %}
                         <tr>
@@ -198,4 +201,6 @@
 </div>
 
 {% include 'includes/upload_modal.html' %}
+{% include 'includes/create_folder_modal.html' %}
+
 {% endblock %}
