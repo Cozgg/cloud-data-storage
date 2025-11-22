@@ -288,16 +288,103 @@ def admin_users():
     return render_template("admin/all_users.html", users=users)
 
 
-# @app.route('/billing/create_payment')
-# @login_required
-# def create_payment():
-#     return "Tính năng đang bảo trì", 503
+@app.route('/billing/create_payment')
+@login_required
+def create_payment():
+    # 1. Lấy thông tin gói cước từ URL (?pkg=pro hoặc ?pkg=vip)
+    package_type = request.args.get('pkg', 'pro')  # Mặc định là pro nếu không có
 
-# @app.route('/billing/return')
-# @login_required
-# def payment_return():
-#     # ...
-#     return redirect(url_for('user_dashboard'))
+    # 2. Thiết lập giá tiền dựa trên gói
+    if package_type == 'vip':
+        amount = "1000000"  # 1 Triệu
+        order_info = f"Mua goi VIP PRO (1TB) cho {current_user.username}"
+    else:
+        amount = "50000"  # 50 Ngàn
+        order_info = f"Nang cap goi Pro (100GB) cho {current_user.username}"
+    # 1. Chuẩn bị dữ liệu đơn hàng
+    order_id = str(uuid.uuid4())
+    request_id = str(uuid.uuid4())
+
+    # 2. Lưu đơn hàng vào Database (PENDING)
+    try:
+        new_trans = Transaction(name=f"Giao dich cua {current_user.name}",order_id=order_id, amount=float(amount), order_info=order_info, status='PENDING',
+                                user_id=current_user.id)
+        db.session.add(new_trans)
+        db.session.commit()
+    except Exception as e:
+        print(e)
+        return redirect(url_for('billing'))
+
+    # 3. Tạo chữ ký (Signature) theo công thức của MoMo
+    raw_signature = (f"accessKey={app.config['MOMO_ACCESS_KEY']}&amount={amount}&extraData=&ipnUrl={app.config['MOMO_IPN_URL']}"
+                     f"&orderId={order_id}&orderInfo={order_info}&partnerCode={app.config['MOMO_PARTNER_CODE']}"
+                     f"&redirectUrl={app.config['MOMO_REDIRECT_URL']}&requestId={request_id}&requestType=captureWallet")
+
+    h = hmac.new(bytes(app.config['MOMO_SECRET_KEY'], 'ascii'), bytes(raw_signature, 'utf-8'), hashlib.sha256)
+    signature = h.hexdigest()
+
+    # 4. Gửi yêu cầu sang MoMo (Dùng URL trong ảnh bạn gửi)
+    data = {
+        'partnerCode': app.config['MOMO_PARTNER_CODE'],
+        'partnerName': "Cloud Storage Test",
+        'storeId': "MomoTestStore",
+        'requestId': request_id,
+        'amount': amount,
+        'orderId': order_id,
+        'orderInfo': order_info,
+        'redirectUrl': app.config['MOMO_REDIRECT_URL'],
+        'ipnUrl': app.config['MOMO_IPN_URL'],
+        'lang': 'vi',
+        'extraData': "",
+        'requestType': "captureWallet",
+        'signature': signature
+    }
+
+    try:
+        response = requests.post(app.config['MOMO_ENDPOINT'], json=data)  # Gửi POST request
+        result = response.json()
+        if result['resultCode'] == 0:
+            return redirect(result['payUrl'])  # Chuyển hướng sang MoMo
+        else:
+            flash(result.get('message'), "danger")
+            return redirect(url_for('billing'))
+    except Exception as e:
+        flash(str(e), "danger")
+        return redirect(url_for('billing'))
+
+
+@app.route('/billing/return')
+@login_required
+def payment_return():
+    result_code = request.args.get('resultCode')
+    order_id = request.args.get('orderId')
+
+    transaction = Transaction.query.filter_by(order_id=order_id).first()
+
+    if transaction and result_code == '0':
+        if transaction.status != 'SUCCESS':
+            transaction.status = 'SUCCESS'
+            # Nâng cấp dung lượng lên 100GB
+            user = User.query.get(current_user.id)
+            # Nếu đóng 1 Triệu -> Lên 1TB (1024 GB)
+            if transaction.amount >= 1000000:
+                user.storage_limit_gb = 1024
+                flash("Đẳng cấp! Bạn đã sở hữu gói VIP PRO 1TB.", "success")
+
+            # Nếu đóng 50 Ngàn -> Lên 100 GB
+            elif transaction.amount >= 50000:
+                user.storage_limit_gb = 100
+                flash("Thanh toán thành công! Dung lượng đã lên 100GB.", "success")
+
+            db.session.commit()
+    else:
+        if transaction:
+            transaction.status = 'FAILED'
+            db.session.commit()
+        flash("Thanh toán thất bại.", "danger")
+
+    return redirect(url_for('user_dashboard'))
+
 
 # @app.route('/momo_ipn', methods=['POST'])
 # def momo_ipn():
