@@ -16,13 +16,16 @@
         <div class="drive-actions">
             <button class="btn-icon"><i class="bi bi-gear fs-4"></i></button>
             <div class="dropdown ms-2">
-                <button class="btn-icon" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                <button class="btn-icon" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown"
+                        aria-expanded="false">
                     <i class="bi bi-person-circle fs-4"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
                     <li><h6 class="dropdown-header">Chào, {{ current_user.name }}!</h6></li>
                     <li><a class="dropdown-item" href="{{ url_for('billing') }}">Quản lý thanh toán</a></li>
-                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <hr class="dropdown-divider">
+                    </li>
                     <li><a class="dropdown-item text-danger" href="{{ url_for('user_logout') }}">
                         <i class="bi bi-box-arrow-right me-2"></i>Đăng xuất
                     </a></li>
@@ -32,7 +35,8 @@
     </div>
     <div class="drive-body">
         <div class="drive-sidebar">
-            <button type="button" class="btn btn-light btn-lg shadow-sm mb-3 w-100 btn-new" data-bs-toggle="modal" data-bs-target="#uploadModal">
+            <button type="button" class="btn btn-light btn-lg shadow-sm mb-3 w-100 btn-new" data-bs-toggle="modal"
+                    data-bs-target="#uploadModal">
                 <i class="bi bi-plus-lg"></i> Mới
             </button>
             <div class="nav flex-column nav-pills" role="tablist">
@@ -56,10 +60,22 @@
             </h4>
             <div class="card shadow-sm mb-4">
                 <div class="card-body">
-                    <h5 class="card-title">Dung lượng của bạn (Gói Free)</h5>
+                    <h5 class="card-title">
+                        Dung lượng của bạn
+                        {% if limit_gb >= 1000 %}
+                        <span class="text-warning fw-bold">(Gói VIP PRO)</span>
+                        {% elif limit_gb >= 100 %}
+                        <span class="text-primary fw-bold">(Gói Pro)</span>
+                        {% else %}
+                        <span class="text-muted">(Gói Free)</span>
+                        {% endif %}
+                    </h5>
                     <p>Đã dùng: {{ "%.2f"|format(usage_gb) }} GB / {{ "%.0f"|format(limit_gb) }} GB</p>
                     <div class="progress" style="height: 25px;">
-                        <div class="progress-bar" role="progressbar" style="width: {{ quota_percent }}%;" aria-valuenow="{{ quota_percent }}" aria-valuemin="0" aria-valuemax="100">{{ "%.0f"|format(quota_percent) }}%</div>
+                        <div class="progress-bar" role="progressbar" style="width: {{ quota_percent }}%;"
+                             aria-valuenow="{{ quota_percent }}" aria-valuemin="0" aria-valuemax="100">{{
+                            "%.0f"|format(quota_percent) }}%
+                        </div>
                     </div>
                 </div>
             </div>
@@ -83,15 +99,27 @@
                         <div class="card-body">
                             <h5 class="card-title display-5">50.000đ</h5>
                             <p class="card-text">Dung lượng: 100 GB</p>
-                            <a href="{{ url_for('create_payment') }}" class="btn btn-light fw-bold">
+                            <a href="{{ url_for('create_payment', pkg='pro') }}" class="btn btn-light fw-bold">
                                 <i class="bi bi-arrow-up-circle"></i> Nâng cấp ngay
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-center text-white bg-warning shadow">
+                        <div class="card-header fs-5 text-dark">VIP PRO</div>
+                        <div class="card-body text-dark">
+                            <h5 class="card-title display-5 fw-bold">1 Triệu</h5>
+                            <p class="card-text fw-bold">Dung lượng: 1 TB</p>
+                            <a href="{{ url_for('create_payment', pkg='vip') }}" class="btn btn-dark fw-bold">
+                                <i class="bi bi-gem"></i> Mua ngay
                             </a>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        </div>
+    </div>
 </div>
 {% include 'includes/upload_modal.html' %}
 {% endblock %}
