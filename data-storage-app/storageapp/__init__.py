@@ -22,6 +22,15 @@ DB_NAME = "cloudstorage"
 app.config["SQLALCHEMY_DATABASE_URI"] = f"mysql+pymysql://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
+app.config["SQLALCHEMY_DATABASE_URI"] = f"mysql+pymysql://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config['MOMO_ENDPOINT'] = "https://test-payment.momo.vn/v2/gateway/api/create"
+app.config['MOMO_PARTNER_CODE'] = "MOMO"
+app.config['MOMO_ACCESS_KEY'] = "F8BBA842ECF85"
+app.config['MOMO_SECRET_KEY'] = "K951B6PE1waDMi640xX08PD3vg6EkVlz"
+app.config['MOMO_REDIRECT_URL'] = "http://127.0.0.1:5000/billing/return"
+app.config['MOMO_IPN_URL'] = "http://127.0.0.1:5000/momo_ipn"
+
 db = SQLAlchemy(app)
 login = LoginManager(app)
 
