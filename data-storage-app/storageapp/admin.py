@@ -17,6 +17,7 @@ class UserView(AuthenticatedModelView):
     column_searchable_list = ['name', 'username']
     can_edit = True
     can_create = True
+    can_delete = True
 
 
 class BillingView(AuthenticatedModelView):

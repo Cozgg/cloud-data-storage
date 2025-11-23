@@ -24,6 +24,7 @@ class User(Base, UserMixin):
     avatar = Column(String(300), nullable=True)
     role = Column(Enum(UserRole), default=UserRole.USER)
     storage_limit_gb = Column(Integer, default=15)
+    is_locked = Column(Boolean, default=False)
 
     files = relationship('File', backref='user', lazy=True)
     folders = relationship('Folder', backref='user', lazy=True)

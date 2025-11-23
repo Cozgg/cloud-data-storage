@@ -15,15 +15,13 @@ app.config["MINIO_SECURE"] = False
 # --- CẤU HÌNH DATABASE (RDS HOẶC EC2 SỐ 2) ---
 # Thay 'ENDPOINT_CUA_RDS' bằng đường dẫn AWS cấp cho bạn
 DB_USER = "admin"
-DB_PASS = "12345678"
-DB_HOST = "database-cloud-storage.cuakz9khnlh0.us-east-1.rds.amazonaws.com" # Endpoint RDS
-DB_NAME = "cloudstorage"
+DB_PASS = "123456789"
+DB_HOST = "test-db.cyjvvv0vx5sk.us-east-1.rds.amazonaws.com" # Endpoint RDS
+DB_NAME = "cloud-storage"
 
 app.config["SQLALCHEMY_DATABASE_URI"] = f"mysql+pymysql://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-app.config["SQLALCHEMY_DATABASE_URI"] = f"mysql+pymysql://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}"
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config['MOMO_ENDPOINT'] = "https://test-payment.momo.vn/v2/gateway/api/create"
 app.config['MOMO_PARTNER_CODE'] = "MOMO"
 app.config['MOMO_ACCESS_KEY'] = "F8BBA842ECF85"
@@ -35,4 +33,3 @@ db = SQLAlchemy(app)
 login = LoginManager(app)
 
 # docker run -p 9000:9000 -p 9001:9001 -e "MINIO_ROOT_USER=minioadmin" -e "MINIO_ROOT_PASSWORD=minioadmin" -v C:\minio-data:/data quay.io/minio/minio server /data --console-address ":9001"
-

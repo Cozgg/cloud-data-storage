@@ -18,7 +18,10 @@ login.login_message_category = 'info'
 
 @login.user_loader
 def load_user(user_id):
-    return dao.get_user_by_id(user_id)
+    user = dao.get_user_by_id(user_id)
+    if user and user.is_locked:
+        return None
+    return user
 
 
 @app.route("/")
@@ -50,11 +53,17 @@ def user_login():
         user_dict = dao.auth_user(username, password)
 
         if user_dict:
-            login_user(user=user_dict)
-            next_page = request.args.get('next')
-            if next_page:
-                return redirect(next_page)
-            return redirect(url_for('homepage'))
+            if user_dict.is_locked:  # THÊM KIỂM TRA KHÓA
+                err_msg = "Tài khoản này đã bị khóa."
+            else:
+                login_user(user=user_dict)
+                next_page = request.args.get('next')
+                if next_page:
+                    return redirect(next_page)
+                if user_dict.role == UserRole.ADMIN:
+                    return redirect(url_for('admin_dashboard'))
+                else:
+                    return redirect(url_for('user_dashboard'))
         else:
             err_msg = "Tài khoản hoặc mật khẩu không đúng!"
 
@@ -286,6 +295,34 @@ def admin_users():
         users = [u for u in users if q_lower in u.name.lower() or q_lower in u.username.lower()]
 
     return render_template("admin/all_users.html", users=users)
+
+
+@app.route('/admin/toggle-user-lock/<int:user_id>', methods=['POST'])
+@login_required
+def toggle_user_lock(user_id):
+    if current_user.role != UserRole.ADMIN:
+        return redirect(url_for('user_dashboard'))
+
+    user_to_toggle = dao.get_user_by_id(user_id)
+
+    if user_to_toggle and user_to_toggle.id != current_user.id and user_to_toggle.role != UserRole.ADMIN:
+        try:
+            user_to_toggle.is_locked = not user_to_toggle.is_locked
+            db.session.commit()
+
+            status = "khóa" if user_to_toggle.is_locked else "mở khóa"
+            flash(f"Đã {status} tài khoản '{user_to_toggle.username}' thành công.", "success")
+
+        except Exception as e:
+            flash(f"Lỗi khi thực hiện hành động: {e}", "danger")
+    elif user_to_toggle and user_to_toggle.role == UserRole.ADMIN:
+         flash("Không thể khóa tài khoản của Quản trị viên.", "danger")
+    elif user_to_toggle and user_to_toggle.id == current_user.id:
+         flash("Không thể tự khóa tài khoản của mình.", "danger")
+    else:
+        flash("Không tìm thấy người dùng.", "danger")
+
+    return redirect(url_for('admin_users', q=request.args.get('q'))) # Giữ nguyên query tìm kiếm
 
 
 @app.route('/billing/create_payment')

@@ -51,7 +51,7 @@
                         <th scope="col">Họ tên</th>
                         <th scope="col">Tài khoản (Username)</th>
                         <th scope="col">Vai trò</th>
-                        <th scope="col">Hành động</th>
+                        <th scope="col">Trạng thái</th> <th scope="col">Hành động</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -68,10 +68,28 @@
                                 <span class="badge bg-secondary">Người dùng</span>
                                 {% endif %}
                             </td>
+                            <td> {% if u.is_locked %}
+                                <span class="badge bg-warning text-dark">Đã khóa</span>
+                                {% else %}
+                                <span class="badge bg-success">Hoạt động</span>
+                                {% endif %}
+                            </td>
                             <td>
-                                <button class="btn btn-light btn-sm" title="Khóa/Mở (Chưa có)">
-                                    <i class="bi bi-lock"></i>
-                                </button>
+                                <form action="{{ url_for('toggle_user_lock', user_id=u.id, q=request.args.get('q', '')) }}"
+                                      method="POST"
+                                      style="display: inline;"
+                                      onsubmit="return confirm('Bạn có chắc chắn muốn {% if u.is_locked %}mở khóa{% else %}khóa{% endif %} tài khoản {{ u.username }}?');">
+                                    {% set action_icon = 'bi-unlock-fill' if u.is_locked else 'bi-lock-fill' %}
+                                    {% set action_text = 'Mở khóa' if u.is_locked else 'Khóa' %}
+                                    {% set action_color = 'text-success' if u.is_locked else 'text-danger' %}
+
+                                    <button type="submit"
+                                            class="btn btn-light btn-sm"
+                                            title="{{ action_text }}"
+                                            {% if u.role == 'ADMIN' %} disabled {% endif %} >
+                                        <i class="bi {{ action_icon }} {{ action_color }}"></i>
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                         {% endfor %}
