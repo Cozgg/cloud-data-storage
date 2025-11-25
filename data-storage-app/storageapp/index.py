@@ -152,6 +152,34 @@ def create_new_folder():
     return redirect_back(parent_id)
 
 
+# @app.route('/api/get-upload-url', methods=['POST'])
+# @login_required
+# def get_upload_url():
+#     # Chỉnh sửa để chấp nhận đường dẫn tương đối (folder upload) hoặc tên file
+#     path_or_filename = request.json.get('path_or_filename')
+#     # file_type không còn cần thiết
+#
+#     if not path_or_filename:
+#         return jsonify({"error": "Thiếu tên file hoặc đường dẫn"}), 400
+#
+#     # object_name sẽ là full path trên MinIO, ví dụ: user_1/MyFolder/file.txt
+#     object_name = f"user_{current_user.id}/{path_or_filename}"
+#
+#     try:
+#         presigned_url = controllers.get_presigned_upload_url(object_name)
+#
+#         if presigned_url:
+#             return jsonify({
+#                 "url": presigned_url,
+#                 "object_name": object_name
+#             })
+#         else:
+#             return jsonify({"error": "Lỗi kết nối MinIO"}), 500
+#     except Exception as e:
+#         return jsonify({"error": str(e)}), 500
+
+
+
 @app.route('/api/get-upload-url', methods=['POST'])
 @login_required
 def get_upload_url():
