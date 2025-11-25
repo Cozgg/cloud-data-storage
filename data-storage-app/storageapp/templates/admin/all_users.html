@@ -10,26 +10,12 @@
 
 {% block content %}
 <div class="drive-container">
-    <div class="drive-header">
-        <img src="{{ url_for('static', filename='images/icon_cloud.jpg') }}" alt="Logo" class="drive-logo">
-        <span class="fs-4 me-4">Storage Cloud</span>
-        <span class="fs-5 text-danger">(Admin)</span>
-
-        <form class="drive-search position-relative" method="get" action="{{ url_for('admin_users') }}">
-            <i class="bi bi-search drive-search-icon"></i>
-            <input class="form-control" type="text" placeholder="Tìm User..." name="q" value="{{ request.args.get('q', '') }}">
-        </form>
-
-        <div class="drive-actions">
-            <span class="fs-5 me-3">Chào, {{ current_user.name }}!</span>
-            <a href="{{ url_for('user_logout') }}" class="btn-icon"><i class="bi bi-box-arrow-right fs-4"></i></a>
-        </div>
-    </div>
     <div class="drive-body">
         <div class="drive-sidebar">
-            <a href="#" class="btn btn-danger btn-lg shadow-sm mb-3 w-100 btn-new disabled" onclick="return false;">
-                <i class="bi bi-plus-lg"></i> Tạo Gói Mới (Đang phát triển)
-            </a>
+            <button class="btn btn-primary btn-lg shadow-sm mb-3 w-100 btn-new"
+                    data-bs-toggle="modal" data-bs-target="#createUserModal">
+                <i class="bi bi-person-plus-fill"></i> Thêm Người Dùng Mới
+            </button>
             <div class="nav flex-column nav-pills" role="tablist">
                 <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
                     <i class="bi bi-bar-chart-fill"></i> Thống kê
@@ -40,10 +26,6 @@
             </div>
         </div>
         <div class="drive-content">
-            <h4 class="mb-3">
-                <i class="bi bi-people-fill"></i> Quản lý Người dùng
-            </h4>
-
             <table class="table table-hover align-middle bg-white shadow-sm">
                 <thead class="table-light">
                     <tr>
@@ -51,7 +33,8 @@
                         <th scope="col">Họ tên</th>
                         <th scope="col">Tài khoản (Username)</th>
                         <th scope="col">Vai trò</th>
-                        <th scope="col">Trạng thái</th> <th scope="col">Hành động</th>
+                        <th scope="col">Trạng thái</th>
+                        <th scope="col">Hành động</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -62,7 +45,7 @@
                             <td>{{ u.name }}</td>
                             <td>{{ u.username }}</td>
                             <td>
-                                {% if u.role == 'ADMIN' %}
+                                {% if u.role.name == 'ADMIN' %}
                                 <span class="badge bg-danger">Quản trị viên</span>
                                 {% else %}
                                 <span class="badge bg-secondary">Người dùng</span>
@@ -75,6 +58,20 @@
                                 {% endif %}
                             </td>
                             <td>
+                                <button type="button"
+                                        class="btn btn-light btn-sm text-primary"
+                                        title="Chỉnh sửa người dùng"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#editUserModal"
+                                        data-user-id="{{ u.id }}"
+                                        data-user-name="{{ u.name }}"
+                                        data-user-username="{{ u.username }}"
+                                        data-user-role="{{ u.role.name }}"
+                                        data-user-limit="{{ u.storage_limit_gb }}"
+                                        {% if u.role.name == 'ADMIN' and u.id != current_user.id %} disabled {% endif %}>
+                                    <i class="bi bi-pencil-square"></i>
+                                </button>
+
                                 <form action="{{ url_for('toggle_user_lock', user_id=u.id, q=request.args.get('q', '')) }}"
                                       method="POST"
                                       style="display: inline;"
@@ -86,8 +83,20 @@
                                     <button type="submit"
                                             class="btn btn-light btn-sm"
                                             title="{{ action_text }}"
-                                            {% if u.role == 'ADMIN' %} disabled {% endif %} >
+                                            {% if u.role.name == 'ADMIN' or u.id == current_user.id %} disabled {% endif %} >
                                         <i class="bi {{ action_icon }} {{ action_color }}"></i>
+                                    </button>
+                                </form>
+
+                                <form action="{{ url_for('api_delete_user', user_id=u.id, q=request.args.get('q', '')) }}"
+                                      method="POST"
+                                      style="display: inline;"
+                                      onsubmit="return confirm('CẢNH BÁO: Hành động này sẽ xóa TẤT CẢ tệp, thư mục và giao dịch của người dùng {{ u.username }}. Bạn có chắc chắn muốn xóa không?');">
+                                    <button type="submit"
+                                            class="btn btn-light btn-sm text-danger"
+                                            title="Xóa người dùng"
+                                            {% if u.role.name == 'ADMIN' or u.id == current_user.id %} disabled {% endif %}>
+                                        <i class="bi bi-person-x-fill"></i>
                                     </button>
                                 </form>
                             </td>
@@ -95,7 +104,7 @@
                         {% endfor %}
                     {% else %}
                         <tr>
-                            <td colspan="5" class="text-center text-muted p-4">
+                            <td colspan="6" class="text-center text-muted p-4">
                                 Không tìm thấy người dùng nào.
                             </td>
                         </tr>
@@ -105,4 +114,123 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="createUserModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="bi bi-person-plus-fill me-2"></i>Thêm Người Dùng Mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('admin_create_user') }}" method="post">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Họ và tên</label>
+                        <input type="text" class="form-control" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Tên tài khoản (Username)</label>
+                        <input type="text" class="form-control" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Mật khẩu</label>
+                        <input type="password" class="form-control" name="password" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted">Vai trò</label>
+                            <select class="form-select" name="role" required>
+                                <option value="USER" selected>Người dùng</option>
+                                <option value="ADMIN">Quản trị viên</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted">Dung lượng (GB)</label>
+                            <input type="number" class="form-control" name="storage_limit_gb" required value="15" min="0">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary px-4">Tạo Người Dùng</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editUserModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square me-2"></i>Chỉnh Sửa Thông Tin Người Dùng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editUserForm" method="post">
+                <div class="modal-body">
+                    <input type="hidden" name="user_id" id="edit-user-id">
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Họ và tên</label>
+                        <input type="text" class="form-control" name="name" id="edit-name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Tên tài khoản (Username)</label>
+                        <input type="text" class="form-control" id="edit-username" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Vai trò</label>
+                        <input type="text" class="form-control" id="edit-role" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Dung lượng tối đa (GB)</label>
+                        <input type="number" class="form-control" name="storage_limit_gb" id="edit-storage-limit" required min="0">
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary px-4">Lưu Thay Đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var editUserModal = document.getElementById('editUserModal');
+        if (editUserModal) {
+            editUserModal.addEventListener('show.bs.modal', function (event) {
+                // Nút kích hoạt modal
+                var button = event.relatedTarget;
+
+                // Trích xuất dữ liệu từ data-bs-* attributes
+                var userId = button.getAttribute('data-user-id');
+                var userName = button.getAttribute('data-user-name');
+                var userUsername = button.getAttribute('data-user-username');
+                var userRole = button.getAttribute('data-user-role');
+                var userLimit = button.getAttribute('data-user-limit');
+
+                // Cập nhật nội dung Modal
+                var modalTitle = editUserModal.querySelector('.modal-title');
+                var modalForm = document.getElementById('editUserForm');
+
+                modalTitle.textContent = 'Chỉnh Sửa Thông Tin Người Dùng ' + userUsername;
+
+                // Cập nhật Action của Form: Dùng slice(0, -1) để loại bỏ số 0 giả và nối với userId thật
+                modalForm.action = "{{ url_for('update_user_info', user_id=0) }}".slice(0, -1) + userId;
+
+                // Điền dữ liệu vào các trường input
+                editUserModal.querySelector('#edit-user-id').value = userId;
+                editUserModal.querySelector('#edit-name').value = userName;
+                editUserModal.querySelector('#edit-username').value = userUsername;
+
+                var roleText = userRole === 'ADMIN' ? 'Quản trị viên' : 'Người dùng';
+                editUserModal.querySelector('#edit-role').value = roleText;
+
+                editUserModal.querySelector('#edit-storage-limit').value = userLimit;
+            });
+        }
+    });
+</script>
+
 {% endblock %}

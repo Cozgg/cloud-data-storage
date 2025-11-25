@@ -1,7 +1,7 @@
 import hashlib
 from sqlalchemy import func
 from storageapp import db
-from storageapp.models import User, File, Folder
+from storageapp.models import User, File, Folder, Transaction
 
 
 def auth_user(username, password):
@@ -13,13 +13,47 @@ def get_user_by_id(user_id):
     return User.query.get(user_id)
 
 
-def add_user(name, username, password):
+def get_user_by_username(username):
+    """Tìm người dùng theo tên tài khoản."""
+    return User.query.filter(User.username == username).first()
+
+# Thay thế hoặc bổ sung: Hàm thêm người dùng với đầy đủ thông tin (cho Admin)
+def add_user_full(name, username, password, role, storage_limit_gb):
     password_hash = str(hashlib.md5(password.encode('utf-8')).hexdigest())
-    u = User(name=name, username=username, password=password_hash)
+    # Đảm bảo role là đối tượng Enum
+    user_role = UserRole.ADMIN if role == 'ADMIN' else UserRole.USER
+    u = User(name=name, username=username, password=password_hash, role=user_role, storage_limit_gb=storage_limit_gb)
     db.session.add(u)
     db.session.commit()
     return u
 
+def update_user(user_id, name=None, storage_limit_gb=None):
+    """Cập nhật thông tin người dùng (tên và dung lượng)."""
+    user = User.query.get(user_id)
+    if user:
+        if name is not None:
+            user.name = name
+        if storage_limit_gb is not None:
+            user.storage_limit_gb = storage_limit_gb
+        db.session.commit()
+        return True
+    return False
+
+def delete_user_and_content(user_id):
+    """Xóa người dùng, tất cả các tệp, thư mục và giao dịch của họ trong DB."""
+    user = User.query.get(user_id)
+    if user:
+        # Xóa các bản ghi giao dịch
+        Transaction.query.filter_by(user_id=user_id).delete()
+        # Xóa các bản ghi tệp
+        File.query.filter_by(user_id=user_id).delete()
+        # Xóa các bản ghi thư mục
+        Folder.query.filter_by(user_id=user_id).delete()
+        # Xóa người dùng
+        db.session.delete(user)
+        db.session.commit()
+        return True
+    return False
 
 def get_files_for_user(user_id, q=None):
     query = File.query.filter_by(user_id=user_id)

@@ -297,6 +297,126 @@ def admin_users():
     return render_template("admin/all_users.html", users=users)
 
 
+@app.route('/admin/create-user', methods=['POST'])
+@login_required
+def admin_create_user():
+    if current_user.role != UserRole.ADMIN:
+        flash('Bạn không có quyền truy cập trang này!', 'danger')
+        return redirect(url_for('user_dashboard'))
+
+    name = request.form.get("name")
+    username = request.form.get("username")
+    password = request.form.get("password")
+    role_str = request.form.get("role")
+    storage_limit_gb = request.form.get("storage_limit_gb")
+
+    if not name or not username or not password or not role_str or not storage_limit_gb:
+        flash("Vui lòng điền đầy đủ thông tin.", "danger")
+        return redirect(url_for('admin_users'))
+
+    try:
+        storage_limit_gb = int(storage_limit_gb)
+        if storage_limit_gb < 0:
+            raise ValueError("Dung lượng phải là số dương.")
+
+        existing_user = dao.get_user_by_username(username)
+        if existing_user:
+            flash("Tên tài khoản đã tồn tại.", "danger")
+            return redirect(url_for('admin_users'))
+
+        role = UserRole.ADMIN if role_str == 'ADMIN' else UserRole.USER
+
+        dao.add_user_full(name, username, password, role, storage_limit_gb)
+
+        flash(f"Đã tạo tài khoản '{username}' thành công.", "success")
+    except ValueError as e:
+        flash(f"Lỗi nhập liệu: {e}", "danger")
+    except Exception as e:
+        flash(f"Lỗi hệ thống khi tạo người dùng: {e}", "danger")
+
+    return redirect(url_for('admin_users', q=request.args.get('q')))
+
+
+@app.route('/admin/update-user/<int:user_id>', methods=['POST'])
+@login_required
+def update_user_info(user_id):
+    if current_user.role != UserRole.ADMIN:
+        flash('Bạn không có quyền truy cập trang này!', 'danger')
+        return redirect(url_for('user_dashboard'))
+
+    user_to_update = dao.get_user_by_id(user_id)
+    if not user_to_update:
+        flash("Không tìm thấy người dùng.", "danger")
+        return redirect(url_for('admin_users'))
+
+    if user_to_update.role == UserRole.ADMIN and user_to_update.id != current_user.id:
+        flash("Không thể chỉnh sửa thông tin của Quản trị viên khác.", "danger")
+        return redirect(url_for('admin_users'))
+
+    name = request.form.get("name")
+    new_limit_gb = request.form.get("storage_limit_gb")
+
+    if not name or not new_limit_gb:
+        flash("Tên và Dung lượng không được để trống.", "danger")
+        return redirect(url_for('admin_users'))
+
+    try:
+        new_limit_gb = int(new_limit_gb)
+        if new_limit_gb < 0:
+            raise ValueError("Dung lượng phải là số dương.")
+
+        dao.update_user(user_to_update.id, name, new_limit_gb)
+
+        flash(f"Đã cập nhật thông tin người dùng '{user_to_update.username}' thành công.", "success")
+    except ValueError as e:
+        flash(f"Lỗi nhập liệu: {e}", "danger")
+    except Exception as e:
+        flash(f"Lỗi hệ thống khi cập nhật người dùng: {e}", "danger")
+
+    return redirect(url_for('admin_users', q=request.args.get('q')))
+
+
+@app.route('/admin/delete-user/<int:user_id>', methods=['POST'])
+@login_required
+def api_delete_user(user_id):
+    if current_user.role != UserRole.ADMIN:
+        flash('Bạn không có quyền truy cập trang này!', 'danger')
+        return redirect(url_for('user_dashboard'))
+
+    user_to_delete = dao.get_user_by_id(user_id)
+
+    if not user_to_delete:
+        flash("Không tìm thấy người dùng.", "danger")
+        return redirect(url_for('admin_users'))
+
+    if user_to_delete.role == UserRole.ADMIN:
+        flash("Không thể xóa tài khoản Quản trị viên.", "danger")
+        return redirect(url_for('admin_users'))
+
+    if user_to_delete.id == current_user.id:
+        flash("Không thể tự xóa tài khoản của mình.", "danger")
+        return redirect(url_for('admin_users'))
+
+    try:
+        user_files = dao.get_files_for_user(user_to_delete.id)
+        minio_delete_success = True
+        for f in user_files:
+            if not delete_file_from_minio(DEFAULT_BUCKET, f.object_name):
+                minio_delete_success = False
+
+        dao.delete_user_and_content(user_to_delete.id)
+
+        flash(f"Đã xóa tài khoản '{user_to_delete.username}' và toàn bộ dữ liệu thành công.", "success")
+        if not minio_delete_success:
+            flash("Cảnh báo: Một số tệp tin MinIO có thể không được xóa do lỗi kết nối.", "warning")
+
+    except Exception as e:
+        flash(f"Lỗi hệ thống khi xóa người dùng: {e}", "danger")
+
+    return redirect(url_for('admin_users', q=request.args.get('q')))
+
+
+
 @app.route('/admin/toggle-user-lock/<int:user_id>', methods=['POST'])
 @login_required
 def toggle_user_lock(user_id):
