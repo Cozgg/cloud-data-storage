@@ -16,7 +16,7 @@ app.config["MINIO_SECURE"] = False
 # Thay 'ENDPOINT_CUA_RDS' bằng đường dẫn AWS cấp cho bạn
 DB_USER = "admin"
 DB_PASS = "123456789"
-DB_HOST = "test-db.cyjvvv0vx5sk.us-east-1.rds.amazonaws.com" # Endpoint RDS
+DB_HOST = "database-cloud-storage.cuakz9khnlh0.us-east-1.rds.amazonaws.com" # Endpoint RDS
 DB_NAME = "cloud-storage"
 
 app.config["SQLALCHEMY_DATABASE_URI"] = f"mysql+pymysql://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}"
