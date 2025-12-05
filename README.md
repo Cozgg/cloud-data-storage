@@ -42,11 +42,6 @@ Hệ thống được thiết kế theo mô hình phân tán trên 2 Availabilit
 ### D. Lưu trữ (MinIO Object Storage)
 - MinIO chạy trên EC2 (t3.medium) để tiết kiệm chi phí so với S3 cho workload nhỏ.
 - Cấu hình: bật CORS, sử dụng Presigned URL cho upload/download.
-- Khởi động MinIO ( ví dụ ):
-```bash
-export MINIO_API_CORS_ALLOW_ORIGIN="*"
-./minio server /data --console-address ":9001"
-```
 
 ### E. Thanh toán (Payment Gateway — MoMo)
 - Tích hợp MoMo để xử lý thanh toán dung lượng.
