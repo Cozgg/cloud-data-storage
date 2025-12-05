@@ -1,6 +1,6 @@
 ## 1. 📖 Tổng quan (Overview)
 
-- **Mục tiêu:** Xây dựng hệ thống Cloud Storage có khả năng mở rộng, bảo mật và tối ưu chi phí cho sinh viên/doanh nghiệp nhỏ.
+- **Mục tiêu:** Vận dụng kiến thức điện toán đám mây để thiết kế và triển khai hệ thống Web trên AWS.
 - **Công nghệ chính:** Python (Flask), MySQL, Nginx, Gunicorn, AWS (EC2, RDS, ALB), MinIO.
 - **Domain (demo):** http://ngustoragecloud.ddns.net
 
