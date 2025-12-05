@@ -1,0 +1,107 @@
+
+Bash
+
+# --- 1. Khởi động lại Web App (Sau khi sửa code Python) ---
+sudo systemctl restart storageapp
+
+# --- 2. Khởi động lại Nginx (Sau khi sửa cấu hình proxy) ---
+sudo systemctl restart nginx
+
+# --- 3. Khởi động lại CẢ HAI (Cho chắc ăn) ---
+sudo systemctl restart storageapp nginx
+
+# --- 4. Xem trạng thái (Xem nó đang sống hay chết) ---
+sudo systemctl status storageapp nginx
+2. CÁC LỆNH XEM LOG (Để bắt lỗi)
+Khi web bị lỗi (500, 502), hãy chạy ngay các lệnh này để biết nguyên nhân.
+
+Bash
+
+# --- 1. Xem log của App Python (Xem lỗi code, lỗi thư viện) ---
+# (Xem 50 dòng cuối cùng)
+sudo journalctl -u storageapp -n 50 --no-pager
+
+# (Xem log chạy trực tiếp thời gian thực - Giống như ma trận)
+sudo journalctl -u storageapp -f
+
+# --- 2. Xem log của Nginx (Xem lỗi kết nối 502 Bad Gateway) ---
+sudo tail -n 20 /var/log/nginx/error.log
+3. CẤU HÌNH NGINX (Reverse Proxy)
+File cấu hình: /etc/nginx/sites-available/default
+
+Nội dung chuẩn (Port 80 -> 8000):
+
+Nginx
+
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name _;
+
+    location / {
+        # Chuyển tiếp vào App Gunicorn đang chạy ở port 8000
+        proxy_pass http://127.0.0.1:8000;
+        
+        # Các header bắt buộc
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+Lệnh áp dụng sau khi sửa file:
+
+Bash
+
+sudo nginx -t      # Kiểm tra lỗi chính tả
+sudo systemctl restart nginx
+4. CẤU HÌNH SYSTEMD (Tự động chạy Web App)
+File cấu hình: /etc/systemd/system/storageapp.service
+
+Nội dung chuẩn:
+
+Ini, TOML
+
+[Unit]
+Description=Gunicorn instance to serve Cloud Storage App
+After=network.target
+
+[Service]
+User=ubuntu
+Group=www-data
+WorkingDirectory=/home/ubuntu/cloud-data-storage/data-storage-app
+Environment="PATH=/home/ubuntu/cloud-data-storage/data-storage-app/venv/bin"
+# Chạy Gunicorn ở cổng 8000
+ExecStart=/home/ubuntu/cloud-data-storage/data-storage-app/venv/bin/gunicorn --workers 3 --bind 127.0.0.1:8000 -m 007 storageapp.index:app
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+Lệnh áp dụng sau khi tạo/sửa file:
+
+Bash
+
+sudo systemctl daemon-reload
+sudo systemctl enable storageapp
+sudo systemctl restart storageapp
+5. LỆNH CHẠY MINIO (Object Storage)
+Lệnh này dùng để khởi động lại MinIO nếu server bị tắt, kèm theo cấu hình CORS để cho phép upload từ web.
+
+Bash
+
+# Bước 1: Tắt MinIO cũ
+sudo pkill minio
+
+# Bước 2: Chạy lại với cấu hình CORS và Mật khẩu (Khớp với file __init__.py)
+export MINIO_API_CORS_ALLOW_ORIGIN="*"
+export MINIO_ROOT_USER="admin"
+export MINIO_ROOT_PASSWORD="admin123123"
+
+# Chạy ẩn dưới nền (Port Console: 9001, Port API: 9000)
+nohup ./minio server /data --console-address ":9001" > minio.log 2>&1 &
+6. CÁC FILE CẤU HÌNH QUAN TRỌNG CẦN NHỚ
+Sửa IP / Domain / Cấu hình Database: nano /home/ubuntu/cloud-data-storage/data-storage-app/storageapp/__init__.py
+
+Sửa Nginx: sudo nano /etc/nginx/sites-available/default
+
+Sửa Service tự động chạy: sudo nano /etc/systemd/system/storageapp.service
