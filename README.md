@@ -18,7 +18,7 @@ Dự án xây dựng hệ thống lưu trữ dữ liệu đám mây phân tán, 
 Hệ thống được thiết kế theo mô hình **High Availability (HA)**, phân tán trên 2 Availability Zones (`us-east-1a` và `us-east-1b`) tại vùng AWS US East (N. Virginia).
 
 ### Sơ đồ cấu trúc hạ tầng (Infrastructure Diagram)
-*(Chèn ảnh sơ đồ kiến trúc mới của bạn tại đây)*
+![Sơ đồ kiến trúc AWS](https://res.cloudinary.com/dp6npbtxz/image/upload/v1765687666/Screenshot_2025-12-14_114715_yswm4v.png)
 
 ### Luồng dữ liệu (Data Flow)
 1. **Truy cập:** Người dùng truy cập qua tên miền (DDNS) → Được trỏ CNAME về **Application Load Balancer (ALB)**.
