@@ -1,60 +1,74 @@
+# Cloud Data Storage System ☁️
+
 ## 1. 📖 Tổng quan (Overview)
 
-- **Mục tiêu:** Vận dụng kiến thức điện toán đám mây để thiết kế và triển khai hệ thống Web trên AWS.
-- **Công nghệ chính:** Python (Flask), MySQL, Nginx, Gunicorn, AWS (EC2, RDS, ALB), MinIO.
-- **Domain (demo):** http://ngustoragecloud.ddns.net
+Dự án xây dựng hệ thống lưu trữ dữ liệu đám mây phân tán, tích hợp khả năng tự động mở rộng (Auto Scaling) và thanh toán trực tuyến. Hệ thống được thiết kế để đảm bảo tính sẵn sàng cao (High Availability) và tối ưu hóa chi phí trên hạ tầng AWS.
+
+- **Mục tiêu:** Vận dụng kiến thức điện toán đám mây để thiết kế, triển khai và vận hành hệ thống Web quy mô lớn trên AWS.
+- **Công nghệ chính:** - **Backend:** Python (Flask), Gunicorn.
+  - **Database & Storage:** MySQL (AWS RDS), MinIO Object Storage.
+  - **Domain Name:** No IP.
+  - **Infra & DevOps:** AWS (EC2, VPC, ALB, Auto Scaling Group), Nginx, Systemd.
+- **Domain (demo):** [http://ngustoragecloud.ddns.net](http://ngustoragecloud.ddns.net)
 
 ---
 
 ## 2. 🏗️ Kiến trúc Hệ thống (System Architecture)
 
-Hệ thống được thiết kế theo mô hình phân tán trên 2 Availability Zones (us-east-1a và us-east-1b) để đảm bảo tính sẵn sàng cao (High Availability).
+Hệ thống được thiết kế theo mô hình **High Availability (HA)**, phân tán trên 2 Availability Zones (`us-east-1a` và `us-east-1b`) tại vùng AWS US East (N. Virginia).
 
-### Sơ đồ cấu trúc hạ tầng
-![Sơ đồ kiến trúc AWS](https://res.cloudinary.com/dp6npbtxz/image/upload/v1764952547/aws_icn6is.jpg)
+### Sơ đồ cấu trúc hạ tầng (Infrastructure Diagram)
+*(Chèn ảnh sơ đồ kiến trúc mới của bạn tại đây)*
+
 ### Luồng dữ liệu (Data Flow)
-- Người dùng truy cập qua tên miền (No-IP) → ALB → Nginx (Web Server).
-- Web Server xử lý logic, gọi RDS để lấy metadata và cấp Presigned URL cho MinIO.
-- Client upload/download trực tiếp tới MinIO bằng Presigned URL.
+1. **Truy cập:** Người dùng truy cập qua tên miền (DDNS) → Được trỏ CNAME về **Application Load Balancer (ALB)**.
+2. **Điều phối:** ALB tự động phân tải request đến các **Web Server** khỏe mạnh trong nhóm **Auto Scaling Group**.
+3. **Xử lý:** Web Server (Nginx + Flask) xử lý logic:
+   - Truy vấn thông tin người dùng/file từ **AWS RDS (MySQL)**.
+   - Tạo Presigned URL từ **MinIO Server** để cấp quyền truy cập file.
+4. **Lưu trữ:** Client upload/download dữ liệu trực tiếp với **MinIO Server** (giảm tải băng thông cho Web Server).
 
 ---
 
-## 3. 🛠️ Chi tiết Triển khai
+## 3. 🛠️ Chi tiết Triển khai (Implementation Details)
 
-### A. Hạ tầng Mạng
-- Sử dụng 2 Public Subnets trải trên 2 AZ để cân bằng tải và dự phòng.
-- VPC mẫu: `10.0.0.0/16`.
-- Security Groups chỉ mở port cần thiết:
-	- HTTP (80) cho ALB → Nginx
-	- MinIO (9000/9001) nội bộ
-	- MySQL (3306) chỉ cho Web Server
+### A. Hạ tầng Mạng (Networking)
+- **VPC:** Custom VPC (`10.0.0.0/16`) với cấu hình mạng nâng cao.
+- **Subnets:** Sử dụng 2 Public Subnets trải rộng trên 2 AZ để đảm bảo dự phòng (Failover).
+- **Security Groups:** Thiết lập theo mô hình "Least Privilege":
+	- **ALB SG:** Mở port 80/443 (Internet).
+	- **Web Server SG:** Chỉ nhận traffic từ ALB SG.
+	- **MinIO SG:** Mở port 9000/9001 (API/Console).
+	- **RDS SG:** Chỉ cho phép kết nối từ Web Server SG.
 
-### B. Cân bằng tải 
-- ALB (Application Load Balancer) dùng cho web tier.
-- Listener: port 80 (hoặc 443 nếu bật TLS).
-- Target group: EC2 chạy Nginx (port 80).
+### B. Cân bằng tải & Mở rộng (Load Balancing & Auto Scaling)
+- **ALB (Application Load Balancer):** Đóng vai trò cửa ngõ duy nhất, thực hiện Health Check liên tục tới các instance.
+- **Auto Scaling Group (ASG):**
+  - **Cơ chế:** Tự động tăng/giảm số lượng server dựa trên mức độ sử dụng CPU (Target Tracking Policy: CPU > 50%).
+  - **Capacity:** Min: 1 | Desired: 2 | Max: 5.
+  - **Launch Template:** Tự động cấp phát máy chủ Ubuntu 24.04 đã cài sẵn môi trường (AMI custom).
 
-### C. Máy chủ Ứng dụng
-- EC2: Ubuntu 24.04 (t3.small).
-- Nginx làm reverse proxy → Gunicorn (port 8000) chạy Flask app.
-- Dùng systemd để quản lý process (Restart=always).
+### C. Máy chủ Ứng dụng (Application Tier)
+- **Instance Type:** t3.small.
+- **Runtime:** Nginx (Reverse Proxy) → Gunicorn (Port 5000) → Flask App.
+- **Quản lý Process:** Systemd service (`cloudapp`) đảm bảo ứng dụng tự khởi động lại khi gặp sự cố.
 
-### D. Lưu trữ (MinIO Object Storage)
-- MinIO chạy trên EC2 (t3.medium) để tiết kiệm chi phí so với S3 cho workload nhỏ.
-- Cấu hình: bật CORS, sử dụng Presigned URL cho upload/download.
+### D. Lưu trữ (Storage Tier)
+- **MinIO Object Storage:** Triển khai trên instance riêng biệt (`t3.medium`) để tối ưu hiệu năng I/O.
+- **Cấu hình:** Tích hợp Bucket Policy, CORS và Presigned URL để bảo mật dữ liệu.
 
 ### E. Thanh toán (Payment Gateway — MoMo)
-- Tích hợp MoMo để xử lý thanh toán dung lượng.
-- Redirect URL sử dụng DNS của ALB.
-- Xử lý IPN (Instant Payment Notification) để cập nhật gói dung lượng ngay lập tức trên hệ thống.
+- Tích hợp cổng thanh toán MoMo QR Code.
+- Sử dụng cơ chế **IPN (Instant Payment Notification)** để xử lý giao dịch realtime.
+- Webhook nhận kết quả thanh toán được định tuyến qua ALB để đảm bảo tính ổn định.
+
 ---
 
 ## 4. 👨‍💻 Tác giả
 
-- **Tên:** Xem thêm trong [contributors](https://github.com/Cozgg/cloud-data-storage/graphs/contributors)
-- **Dự án:** Cloud Data Storage
-- **Email:** nguyenhuucong295@gmail.com
-
-© 2025 Cloud Data Storage Project
+- **Thực hiện bởi:** [Cozg] & Team.
+- **Xem thêm:** [Danh sách đóng góp (Contributors)](https://github.com/Cozgg/cloud-data-storage/graphs/contributors)
+- **Liên hệ:** nguyenhuucong295@gmail.com
 
 ---
+© 2025 Cloud Data Storage Project
