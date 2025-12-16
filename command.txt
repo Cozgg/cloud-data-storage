@@ -105,3 +105,8 @@ Sửa IP / Domain / Cấu hình Database: nano /home/ubuntu/cloud-data-storage/d
 Sửa Nginx: sudo nano /etc/nginx/sites-available/default
 
 Sửa Service tự động chạy: sudo nano /etc/systemd/system/storageapp.service
+==========================================================================
+sudo netstat -tulpn (Xem cổng mở: 80, 8000).
+cat /etc/nginx/sites-enabled/default (Xem cấu hình nối Nginx -> App).
+systemctl status cloudapp (Xem trạng thái App).
+sudo tail -f /var/log/nginx/access.log (Xem log chạy trực tiếp).
