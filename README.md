@@ -68,7 +68,6 @@ Hệ thống được thiết kế theo mô hình **High Availability (HA)**, ph
 
 - **Thực hiện bởi:** [Cozg] & Team.
 - **Xem thêm:** [Danh sách đóng góp (Contributors)](https://github.com/Cozgg/cloud-data-storage/graphs/contributors)
-- **Liên hệ:** nguyenhuucong295@gmail.com
 
 ---
 © 2025 Cloud Data Storage Project
